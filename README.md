@@ -2,7 +2,7 @@
 
 **Three tools. One mission: clean air, made accountable.**
 
-> **Live demo:** deployed on Vercel — URL to be added after first deploy (see *Deployment* below).
+> **Live demo:** [https://aerobin.vercel.app](https://aerobin.vercel.app) — deployed on Vercel (see *Deployment* below).
 
 *Internship portfolio project — 1M1B Green Skills and Applied AI for Climate Action.*
 
