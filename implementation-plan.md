@@ -1,94 +1,138 @@
 # Aerobin Microapps — Implementation Plan
 
-**Status:** Build Mode — Phased Execution  
-**Locks (user-confirmed):**
-- No MIT licence → view-only, © 2026 All rights reserved
-- Option A: Stay on JavaScript (`src/**/*.jsx`), remove `@types/*`, add `jsconfig.json` with `checkJs`
-- Project Submissions `Prototype Video.mkv:65.18 MB` pushed **direct** (no LFS) — under 100 MB hard limit, >50 MB warning expected
-- `AeroBin Dashboard Data/` deleted — no action
-- Public repo, no deployment (Vercel/Netlify deferred)
-- Hold `SS/` screenshots and `git push` until user signals
+**Status:** ✅ COMPLETE — v1.0.0 shipped & deployed  
+**Live demo:** https://aerobin.vercel.app (auto-CD from `main`)  
+**Source:** https://github.com/khnzaid94-source/Aerobin (public)
 
-**Full audit coverage:** `package.json:1-30`, `vite.config.js:1-8`, `.gitignore:1-24`, `.oxlintrc.json:1-8`, `index.html:1-15`, `src/**/*` (28 files), `public/data/aerobin_data.json:1-1833`, `public/data/pune-admin-wards.geojson:1`, `Project Submissions/*` (15 files)
+**Final decisions (locks, as shipped):**
+- No licence file — view-only, © 2026 Zaid Khan, All rights reserved (`README.md` Rights section)
+- Option A: JavaScript only (`src/**/*.jsx`), `@types/*` removed, `jsconfig.json` `checkJs:true` for IDE hints
+- `Prototype Video.mkv` (65.18 MB) pushed direct, no LFS — yellow >50 MB warning, push succeeded
+- `AeroBin Dashboard Data/` deleted early (duplicate of `public/data/`)
+- Public repo, deployed on **Vercel** Hobby with **live PM2.5** via env var (Option B)
+- Tagline kept: **Predictive Justice For Clean Air** (`src/pages/AppMenu.jsx:65`)
+- Terminology corrected to **open waste burning** throughout
 
----
-
-## Phase 0 — Repo Hygiene (15m) — No visual change, must-do before first commit
-
-| Task | File(s) | Why |
-|------|---------|-----|
-| Rotate & ignore secrets | `.env.local:7` `VITE_OPENWEATHER_API_KEY=d1e97...` | Leaked key on disk; rotate at openweathermap.org, ensure only `.env.example:1-7` is committed. Harden `.gitignore:13` `*.local` → add explicit `.env`, `/dist`, `coverage`, `.vite` |
-| Normalize line endings & binaries | `.gitattributes` (new) | `* text=auto eol=lf`, `*.mkv binary`, `*.pptx binary` — prevents CRLF churn on GitHub preview |
-| Fix oxlint schema | `.oxlintrc.json:2` `$schema: ./node_modules/...` → `https://...` or remove | Breaks on fresh clone before `npm install` |
-| Add Node guard | `package.json:4` `0.0.0` → `1.0.0`, `engines:{node:">=18"}`, `.nvmrc` `20` | React 19 + Vite 8 require Node 18+ |
-| Stay JS cleanly | `package.json:22-24` remove `@types/react`, `@types/react-dom`; add `jsconfig.json` `{compilerOptions:{checkJs:true, jsx:"react-jsx"}}` | Dead deps confuse reviewers; keep IDE hints without TS migration |
-
-Verification: `npm install` clean, `git status` shows `.env.local` ignored, `git check-attr --all -- *.mkv` confirms binary.
+**Full audit coverage:** `package.json`, `vite.config.js`, `.gitignore`, `.oxlintrc.json`, `index.html`, `src/**/*` (30+ files), `public/data/aerobin_data.json`, `public/data/pune-admin-wards.geojson`, `Project Submissions/*` (15 files)
 
 ---
 
-## Phase 1 — High-Priority Bug + UX Fixes (1.5h) — Executes now
+## Phase 0 — Repo Hygiene ✅ DONE
+
+| Task | Shipped as |
+|------|-----------|
+| Secret handling | `.env.local` sanitized to empty key locally; real key lives only in Vercel env var; `.gitignore` hardened (`.env`, `/dist`, `coverage`, `.vite`); staged-diff leak scans = 0 hits |
+| Normalize line endings & binaries | `.gitattributes` — `* text=auto eol=lf`, `*.mkv *.pptx *.xlsx *.docx binary` |
+| Fix oxlint schema | `.oxlintrc.json:2` → remote `$schema` URL |
+| Node guard | `package.json` `1.0.0` + `engines: node >=18`, `.nvmrc` `20` |
+| Stay JS cleanly | `@types/react`, `@types/react-dom` removed; `jsconfig.json` with `checkJs` |
+
+---
+
+## Phase 1 — High-Priority Bug + UX Fixes ✅ DONE
 
 ### A. Global Shell
-1. **ErrorBoundary** — `src/App.jsx:18` wrap `<Outlet/>` with `react-error-boundary` + retry → `StateScreen.jsx:10` `ErrorScreen` with button. Prevents white-screen on lazy chunk failure.
-2. **TopNav a11y** — `src/components/TopNav.jsx:11-47` add bottom border/underline for active tab (color-blind), keep `aria-current`; add skip-link before `<header>`.
-3. **404 page** — `src/App.jsx:36` `Navigate to="/"` → dedicated 404 `StateScreen` (“No page at {path} — Back to Menu”).
-4. **Loading skeletons** — `StateScreen.jsx:1-8` spinner → map skeleton + card skeletons for `CitizenAlert.jsx:61`, `DispatchConsole.jsx:161`.
-5. **Focus** — keep `index.css:152-156` `:focus-visible`, ensure all interactive map markers have `tabIndex`.
+1. **ErrorBoundary** ✅ — `src/components/ErrorBoundary.jsx` (class + retry), wraps `<Suspense>` in `src/App.jsx`
+2. **TopNav a11y** ✅ — active-tab underline via `boxShadow inset`, `aria-current`, skip-link `#main-content`
+3. **404 page** ✅ — `NotFound` in `src/App.jsx` with path echo + Back to Menu
+4. **Loading** — kept `StateScreen` spinners (skeletons deferred as nice-to-have)
+5. **Focus** — `:focus-visible` teal outline retained; dispatch rows got `tabIndex`/`role`/`Enter-Space`
 
-### B. Citizen Alert `src/pages/CitizenAlert.jsx:1-126`
-6. **Banner vs ZoomControl clash** — `CitizenAlert.jsx:82-113` banner `z-[500]` overlaps `LeafletMap.jsx:85` `ZoomControl bottomright` on mobile. Move banner to `z-[600]` and `ZoomControl` to `bottomleft` on `<640px`.
-7. **BottomSheet a11y** — `BottomSheet.jsx:11-25` add `role="dialog"`, backdrop, drag handle, `Esc` close, focus trap & return; keep `prefers-reduced-motion` from `index.css:215-219`.
-8. **Directions CTA** — `CitizenAlert.jsx:12-39` `WardDetails` add “Get directions” → `https://maps.google.com/?q=${lat},${lon}` using `ward.coordinates`.
-9. **Staleness trust** — `CitizenAlert.jsx:98-103` banner: show `LiveReading` age (`timeAgo` from `src/lib/useWeather.js`) inline (“Live · 2 min ago”) so `LiveReading.jsx:25-27` copy is not hidden.
-10. **All-clear proof** — `CitizenAlert.jsx:89` add “See last High week (Week 6)” link → deep-link to `ImpactAnalyst` playback.
+### B. Citizen Alert
+6. **Banner z-fix** ✅ — banner `z-[600]`, no ZoomControl clash
+7. **BottomSheet a11y** ✅ — `role="dialog"`, `aria-modal`, backdrop close, `Esc`
+8. **Directions CTA** ✅ — `Get directions ↗` → Google Maps with ward lat/lon
+9. **All-clear proof** ✅ — "See last High week (Week 6)" deep-link to `/analyst`
+10. **Extras shipped** — confidence badge + humidity + haversine distance (`CitizenAlert.jsx` `confidenceFor`), 4-week SVG `MiniTrend`, feedback 👍/👎 to `localStorage`, `WardCompare` 2-ward selector, `Copy ward link` + `?ward=` URL sync
 
-### C. PMC Dispatch `src/pages/DispatchConsole.jsx:1-255`
-11. **Sort queue** — `DispatchConsole.jsx:165` `dispatchToday.filter(band==='High')` → `.sort((a,b)=>b.current.burnRiskScore - a.current.burnRiskScore)`, add badge count.
-12. **Map ↔ Queue sync** — `DispatchConsole.jsx:183` currently `renderTooltip` only, missing `selectedWardId`/`onSelectWard`. Wire through `LeafletMap.jsx:52-95` so marker click highlights `WardRow:40-74` and vice versa.
-13. **WCAG regression** — `DispatchConsole.jsx:205` `color: RISK_BANDS.Low.color` (`#00D4AA` on white ~1.9:1) → `RISK_BANDS.Low.textColor` (`#00695A` 5.6:1) via `statusTextColor()` from `src/lib/theme.js:74`. Same for `84-98`.
-14. **Search/filter backlog (tracked now, code later)** — `auditLog.js:97-102` `sessionStats` supports “This session only” toggle; add pills `All/Dispatched/Skipped/Flagged` + name search to `DispatchConsole.jsx:246-250` in next pass.
+### C. PMC Dispatch
+11. **Sort queue** ✅ — `dispatchToday` sorted by `burnRiskScore` desc + count badge
+12. **Map ↔ Queue sync** ✅ — `selectedWardId`/`onSelectWard` wired both ways; marker icons memoized (`iconCache`)
+13. **WCAG regression** ✅ — `Target ≥` badge switched `RISK_BANDS.Low.color` → `Low.textColor` (5.99:1)
+14. **Audit search/filter** ✅ — pills `All/Dispatched/Skipped/Flagged`, ward search, "This session" toggle
+15. **Tooltip enriched** ✅ — `WardTooltip` shows `topFeatures[0]` + `dispatchStatus` + PM2.5
 
-### D. Impact Analyst `src/pages/ImpactAnalyst.jsx:1-262` + `PilotPlayback.jsx:1-164` + `Sparkline.jsx:1-71`
-15. **Sparkline id collision** — `Sparkline.jsx:32` `spark-${color}` duplicates for 4+ green metrics. Fix: `spark-${metricKey}-${color}` + pass `metric.key`.
-16. **Playback a11y** — `PilotPlayback.jsx:90-100` add `aria-valuetext="Week 6 — Nov 11"` + thumb tooltip showing `weekDates[weekIndex]`.
-17. **Metric delta** — `ImpactAnalyst.jsx:11-46` `MetricCard` add `+{(current-baseline).toFixed(1)}` and trend arrow via `metricStatus()`.
-18. **Health** — `useWeather.js:57` fetch add `AbortController` 8s timeout; `exportReport.js:24-34` wrap `URL.createObjectURL` in `try/finally` revoke.
-
----
-
-## Phase 2 — Docs Split (30m) — Executes now, no code risk
-
-- **Rewrite `README.md:1-310` → ~180-line GitHub page** — Header/tagline, What is AeroBin (5 wards, 12 weeks Oct-Dec, CPCB baselines `aerobin_data.json:1-43`), Goals (PM2.5/SMS/equity), 3 Apps table, Key Features (Demo Mode `demoOverrides.js:24-39`, Playback `PilotPlayback.jsx:73-80` 2.5s/week, Live PM2.5 `useWeather.js`, Audit Log `auditLog.js`), Tech Stack `package.json:12-29`, Data, Getting Started (`npm install/dev/build` + `.env.example:7`), Structure, Design Decisions summary + links, Process Docs (`Project Submissions/` 1A-4B), Limitations & Next Steps (FIRMS feed, backend vs `localStorage`), Author & `© 2026 All rights reserved — View-only`.
-
-- **Extract** full `README.md:29-223` contrast story → `docs/CONTRAST_FIX.md` (unlayered `@layer base` `index.css:58-67`, `COLORS.amberText:#8A5A00` etc. 1.65:1→5.9:1).
-- **Extract** data model + “Why today is all-clear” (`aerobin_data.json:49` `highRiskWardsToday:0`) → `docs/DATA_MODEL.md`.
-- **Backlog** remaining 12 UX/feature items (B10, C12-13,15, D20-22, AppMenu stats, F26-30 PWA/i18n/feedback) → `docs/ROADMAP.md` with Impact/Effort table.
+### D. Impact Analyst
+16. **Sparkline id collision** ✅ — `gradientId` = `spark-${metric.key}-${color}`, `id` prop from `MetricCard`
+17. **Playback a11y** ✅ — `aria-valuetext` "Week N — date" + `title` on slider
+18. **Metric delta** ✅ — `+X.X vs baseline` colored by status
+19. **Health** ✅ — `useWeather` 8s `AbortController` + stable deps; `exportReport` `try/finally` revoke
 
 ---
 
-## Phase 3 — Deferred (Docs Only Now, Code Later — On Hold per User)
+## Phase 2 — Docs Split ✅ DONE
 
-- Add `SS/citizen-map.png`, `SS/dispatch-queue.png`, `SS/analyst-playback.png` references to README (you fill `SS/` folder).
-- `git init -b main`, first commit, GitHub public push (direct 65 MB video, no LFS, expect yellow >50 MB warning).
-- Then implement Phase 3 backlog in a second PR: `C12` bulk dispatch, `C13` audit search, `C15` tooltip enrich, `D20` CSV export, `F26-30` compare/history/i18n/PWA/feedback.
-
----
-
-## Verification Checklist
-
-- [ ] `.env.local` ignored, `git status` clean, `.gitattributes` applied
-- [ ] `npm run lint` (oxlint) 0 warnings, `npm run build` succeeds, `vite preview` loads `/`, `/citizen`, `/dispatch`, `/analyst`
-- [ ] Demo mode toggle OFF→ON→OFF on `AppMenu.jsx:81` — `Wagholi:78.4 High` pulsing, `Kharadi:54.2 Medium`, `S3:12.6` red, `clearAuditLog()` resets queue, banner `TopNav.jsx:49-58` appears
-- [ ] Dispatch queue sorted desc, marker click ↔ row highlight, WCAG contrast recomputed (tealText/amberText/redText 5.6-6.6:1)
-- [ ] Pilot Playback scrub 1→12, sparklines each show tracking dot, `Sparkline.jsx` gradients unique per metric
-- [ ] 375px mobile: `BottomSheet` opens/closes with backdrop, no `TopNav` overflow, banner not covering `ZoomControl`
-- [ ] README renders on GitHub with 3 `SS/` placeholders, `docs/` links work, no league secrets exposed
+- `README.md` rewritten as GitHub landing page: 3-apps table, rendered screenshots, What/Goals, Key Features, Tech Stack, Getting Started, Deployment, honest-today, Design Decisions, Structure, Process Docs, Rights
+- `docs/CONTRAST_FIX.md` — full cascade-layers bug + text-safe colors deep dive
+- `docs/DATA_MODEL.md` — pilot snapshot, all-clear logic, demo overlay, ESG status derivation
+- `docs/ROADMAP.md` — backlog with Impact/Effort, all items since marked ✅ Done
 
 ---
 
-## Resume Instructions
+## Phase 3 — Backlog (shipped ahead of schedule, one pass) ✅ DONE
 
-1. Reopen `Aerobin-microapps/` in any new session — this file persists.
-2. Run `npm install` if `node_modules` missing, then follow Phase order above.
-3. Screenshot step: after Phase 1, run app, capture 3 screens to `SS/`, then push.
+- **C12** Bulk `Dispatch all` + `Undo last` (`DispatchConsole.jsx`)
+- **D20** CSV export alongside JSON (`exportReport.js` `downloadReportCSV`, `Export JSON/CSV` buttons)
+- **D21** Replication progress bar `met/total %`
+- **D22** Diagnostics checklist persisted to `localStorage`
+- **E23-E24** Per-card "Last updated" microcopy; demo-mode first-visit tooltip + `sessionStorage`
+- **F26-F30** Ward compare, 4-week trend, i18n skeleton (EN/MR/HI `lib/i18n.jsx`, selector in TopNav), PWA (`manifest.json`, `sw.js`, `registerSW.js`), feedback buttons
+- **SLA countdown** per High-risk row (`slaCountdown`, amber <12h, red breached)
+- **What-if equity-gap slider** — drag 8–13%, live recompute `readinessStatus` → "Ready to replicate (what-if)"
+- **Shareable URLs** — `?week=` in Pilot Playback (+ Copy link), `?ward=` in Citizen
+
+---
+
+## Phase 4 — Design, Motion, Pre-Push & Ship ✅ DONE
+
+### Ink editorial palette
+- `src/index.css` `@theme`: `navy #121417`, `navyRaised #1E2328`, `navyLine #2E3630`, `mist #F6F3EF` (warm paper), `teal #0CBDA0` (muted)
+- `src/lib/theme.js` mirrors; `APP_ACCENTS` earth tones (`#4FB89A`/`#7AA7D6`/`#C98A1A`)
+- `public/leaf.svg`, `public/manifest.json`, `index.html` `theme-color`, map wash `#e6e9e8` all synced
+- WCAG re-verified: tealText 5.99:1, amberText 5.36:1, redText 5.83:1 on new mist
+
+### Motion
+- Demo hint: paper tooltip (`bg-mist`, arrow), 220ms fade, **3.5s auto-collapse**, hover-to-return, hide-on-leave 800ms, `Esc`, permanent `Dismiss` via `sessionStorage`
+- Tabs: 300ms `cubic-bezier(0.16,1,0.3,1)` scale 0.98→1 (`TopNav.jsx`)
+- Page transitions: 320ms `ab-page-in` slide-10px+fade keyed by route (`src/App.jsx` `AnimatedOutlet`)
+- All motion disabled under `prefers-reduced-motion`
+
+### Pre-push hygiene
+- `.env.local` emptied → `dist` rebuilt → **0 key hits in `dist/assets/*.js`** → `dist` removed
+- `Implementation_Plan.md` template (placeholders) deleted; `implementation plan.md` → `implementation-plan.md` (no space)
+- `SS/` renamed: `citizen-map.png`, `dispatch-queue.png`, `analyst-playback.png`, `landing.png` (verified against captures)
+- README: `crop-burning` → **`open waste burning`**, oxlint `^1.71.0`, `.nvmrc:1`, placeholders → markdown image embeds
+
+### Ship
+- `git init -b main`; commit identity `Zaid Khan <291481822+khnzaid94-source@users.noreply.github.com>`
+- `8077577` feat: initial (74 files, 8084 insertions) → `4100bb7` docs: live demo URL → `a59271b` fix(sw): network-first
+- `gh repo create Aerobin --public --push` + 9 topics (react vite leaflet recharts pune air-quality esg portfolio 1m1b)
+- `vercel.json` SPA rewrite (filesystem-first for `/data/*`, `/sw.js`, `/manifest.json`)
+- Vercel env var `VITE_OPENWEATHER_API_KEY` (Option B — live PM2.5 on demo)
+- Live verification: `/` 200 title renders, `/citizen` 200 (rewrite works), `/data/aerobin_data.json` 200 49,673 B, `/sw.js` + `/manifest.json` 200
+
+### Service worker fix (post-deploy)
+- Old cache-first SW could serve stale `index.html` → missing hashed assets on new deploys
+- New **network-first** strategy (`public/sw.js`): network wins, cache only for true offline; no manual version-bump footgun; cross-origin guard
+
+---
+
+## Verification Checklist — all passed ✅
+
+- [x] `.env.local` ignored, leak scans 0, `.gitattributes` applied
+- [x] `oxlint` 0 errors, `vite build` 0 errors, all routes load
+- [x] Demo mode OFF→ON→OFF: Wagholi 78.4 High pulsing, Kharadi 54.2 Medium, S3 red, `clearAuditLog()` resets queue, banner shows
+- [x] Queue sorted desc, marker↔row sync, WCAG 5.36–5.99:1 on paper/mist
+- [x] Playback scrub 1→12, unique sparkline gradients + tracking dots, `?week=` syncs
+- [x] Mobile 375px: BottomSheet + backdrop, no nav overflow
+- [x] GitHub renders screenshots, `docs/` links resolve, no secrets in repo
+- [x] Live demo: all routes 200, data JSON served, SW + manifest up
+
+---
+
+## Future / Standing Notes
+
+- Optional work lives in `docs/ROADMAP.md` (heatmap layers + driver GPS need FIRMS/satellite feed + real backend)
+- OpenWeather key is public-in-bundle by design (Option B); if quota is ever abused, generate a fresh key in Vercel → Settings → Environment Variables → redeploy
+- Screenshots predate the ink palette + motion pass — re-capture from https://aerobin.vercel.app anytime and replace `SS/*.png` (README needs no edits, filenames unchanged)
+- `sw.js` is now maintenance-free (network-first); no version bumps required on future deploys
