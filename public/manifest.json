@@ -1,0 +1,16 @@
+{
+  "name": "AeroBin Micro-Apps",
+  "short_name": "AeroBin",
+  "description": "Three focused tools built on one 12-week Pune air-quality pilot: citizen alerts, PMC dispatch, and impact reporting.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121417",
+  "theme_color": "#121417",
+  "icons": [
+    {
+      "src": "/leaf.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

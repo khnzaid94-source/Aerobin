@@ -1,0 +1,302 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------
+   AeroBin design tokens
+   Navy + teal + white system shared by all three micro-apps.
+   Red / amber are the only additions beyond the brief's palette,
+   needed to express the risk bands the data itself defines.
+--------------------------------------------------------------- */
+@theme {
+  --color-navy: #121417;
+  --color-navy-raised: #1e2328;
+  --color-navy-line: #2e3630;
+  --color-ink: #0a0c0f;
+  --color-teal: #0cbda0;
+  --color-teal-dim: rgba(12, 189, 160, 0.12);
+  --color-white: #ffffff;
+  --color-mist: #f6f3ef;
+  --color-slate: #565b72;
+  --color-slate-soft: #8b8fa3;
+  --color-red: #f0435a;
+  --color-red-dim: rgba(240, 67, 90, 0.13);
+  --color-amber: #ffb020;
+  --color-amber-dim: rgba(255, 176, 32, 0.16);
+
+  /* Muted UI text on dark chrome (logo subtitle, live-reading timestamps) */
+  --color-muted: #8a9aa8;
+  --color-logo-bg: #1c2520;
+
+  /* Per-app identity accents, landing page only — distinct from the
+     red/amber/teal risk-band colors used *inside* each app, so the two
+     systems never get confused for one another. */
+  --color-citizen: #4fb89a;
+  --color-citizen-tint: #9adcc3;
+  --color-dispatch: #7aa7d6;
+  --color-dispatch-tint: #aac8e6;
+  --color-analyst: #c98a1a;
+  --color-analyst-tint: #e8b86a;
+
+  --font-display: Cambria, Georgia, "Times New Roman", serif;
+  --font-body: Calibri, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* IMPORTANT: base-layer resets must live in @layer base. CSS written
+   outside of any @layer is "unlayered" and unlayered rules always beat
+   layered rules (like Tailwind's utilities) regardless of selector
+   specificity or source order — that previously made `text-white` on a
+   card <h2> lose to this rule's `color: navy`, which is exactly the
+   "titles blend into the background" bug. Keeping resets inside
+   @layer base lets any Tailwind utility (which lives in @layer
+   utilities, a higher-priority layer) override them as expected. */
+@layer base {
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--color-navy);
+    background: var(--color-mist);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-navy);
+  }
+
+  button {
+    font-family: inherit;
+  }
+}
+
+/* Card surface used across all three apps */
+.ab-card {
+  background: var(--color-white);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(10, 12, 15, 0.06), 0 8px 24px rgba(10, 12, 15, 0.06);
+}
+
+/* Scrollbar tuned for the dark chrome */
+.ab-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.ab-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-navy-line);
+  border-radius: 8px;
+}
+.ab-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Leaflet container needs an explicit height; Tailwind utility classes
+   set this per-app, this just resets Leaflet's own default chrome to
+   match the AeroBin palette instead of its default blue focus rings. */
+.leaflet-container {
+  font-family: var(--font-body);
+  background: #e6e9e8;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(16, 15, 28, 0.22);
+}
+.leaflet-popup-content {
+  margin: 14px 16px;
+  font-family: var(--font-body);
+}
+.leaflet-popup-tip {
+  box-shadow: none;
+}
+
+/* Reduced motion: kill the pulse animation used on high-risk markers */
+@media (prefers-reduced-motion: reduce) {
+  .ab-pulse {
+    animation: none !important;
+  }
+  .ab-page-enter {
+    animation: none !important;
+  }
+}
+
+@keyframes ab-page-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ab-page-enter {
+  animation: ab-page-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ab-pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+/* Visible keyboard focus everywhere, on both dark and light chrome */
+:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Ward marker chrome (built as DivIcons so we fully control the pulse) */
+.ab-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+}
+.ab-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #ffffff, 0 2px 6px rgba(10, 12, 15, 0.35);
+  transition: transform 0.15s ease;
+}
+.ab-marker--selected .ab-dot {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 3px #ffffff, 0 0 0 5px currentColor, 0 2px 8px rgba(10, 12, 15, 0.4);
+}
+.ab-pulse {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  animation: ab-pulse-ring 1.8s ease-out infinite;
+}
+
+/* Landing-page card accent art: bleeds slightly past the rounded corner,
+   clipped by the card's own overflow-hidden, never intercepts clicks. */
+.ab-card-accent {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 100px;
+  height: 100px;
+  pointer-events: none;
+  opacity: 0.18;
+}
+
+/* Mobile bottom sheet (Citizen Alert only) */
+.ab-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 700;
+  border-radius: 20px 20px 0 0;
+  background: var(--color-white);
+  box-shadow: 0 -8px 32px rgba(10, 12, 15, 0.28);
+  transform: translateY(0);
+  transition: transform 0.22s ease-out;
+  max-height: 68vh;
+  overflow-y: auto;
+}
+.ab-sheet[data-closed="true"] {
+  transform: translateY(100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ab-sheet {
+    transition: none;
+  }
+}
+
+/* Landing page cards: border lights up in that card's own accent colour
+   on hover (green/blue/gold), set per-card via the --ab-accent custom
+   property rather than a Tailwind hover class, since the accent differs
+   per card. */
+.ab-app-card {
+  border-color: var(--color-navy-line);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.ab-app-card:hover {
+  border-color: var(--ab-accent, var(--color-teal));
+}
+
+/* Range slider used by the Pilot Playback control */
+.ab-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-navy-line);
+  outline: none;
+  position: relative;
+  z-index: 2;
+}
+.ab-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-teal);
+  border: 3px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(16, 15, 28, 0.35);
+  cursor: pointer;
+  margin-top: 0;
+}
+.ab-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-teal);
+  border: 3px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(16, 15, 28, 0.35);
+  cursor: pointer;
+}
+.ab-range::-moz-range-track {
+  background: var(--color-navy-line);
+  height: 6px;
+  border-radius: 999px;
+}
+
+/* One tick per week, sitting directly on the range track. Inset to match
+   the 18px thumb's own radius (9px) so tick N lines up with wherever the
+   thumb actually centers on week N, not the track's raw edge-to-edge
+   width. z-index below .ab-range so the thumb visibly covers whichever
+   tick it's currently sitting on, rather than floating on top of it. */
+.ab-range-ticks {
+  position: absolute;
+  inset: 0 9px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.ab-range-tick {
+  width: 2px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+}

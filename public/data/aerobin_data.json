@@ -1,0 +1,1833 @@
+{
+  "meta": {
+    "project": "AeroBin",
+    "version": "1.0.0",
+    "description": "Simulated pilot data for AeroBin ESG Dashboard \u2014 12-week pilot, 5 Pune wards, Oct\u2013Dec",
+    "generatedOn": "2024-12-23",
+    "dataType": "Simulated \u2014 based on CPCB 2022-24 baselines and ESG report targets",
+    "wards": [
+      "Hadapsar",
+      "Kharadi",
+      "Wagholi",
+      "Bhosari",
+      "Mundhwa"
+    ],
+    "weeks": [
+      "Week 1",
+      "Week 2",
+      "Week 3",
+      "Week 4",
+      "Week 5",
+      "Week 6",
+      "Week 7",
+      "Week 8",
+      "Week 9",
+      "Week 10",
+      "Week 11",
+      "Week 12"
+    ],
+    "weekDates": [
+      "Oct 7",
+      "Oct 14",
+      "Oct 21",
+      "Oct 28",
+      "Nov 4",
+      "Nov 11",
+      "Nov 18",
+      "Nov 25",
+      "Dec 2",
+      "Dec 9",
+      "Dec 16",
+      "Dec 23"
+    ]
+  },
+  "summary": {
+    "pilotStatus": "Active",
+    "currentWeek": 12,
+    "totalWeeks": 12,
+    "wardsMonitored": 5,
+    "highRiskWardsToday": 0,
+    "totalSMSAlertsSent": 9310,
+    "totalDumpSlotsUsed": 1945,
+    "systemStatus": "Operational",
+    "lastUpdated": "2024-12-23",
+    "ncapTarget": "40% PM2.5 reduction by 2026",
+    "pilotBudget": "\u20b918L",
+    "pilotBudgetUsed": "\u20b911.2L"
+  },
+  "wards": {
+    "hadapsar": {
+      "info": {
+        "id": "hadapsar",
+        "name": "Hadapsar",
+        "adminWard": "Admin Ward 13 Hadapsar",
+        "coordinates": [
+          18.5018,
+          73.926
+        ],
+        "population": 340000,
+        "greenCover": 12,
+        "marketFlag": true,
+        "incomeLevel": "mixed"
+      },
+      "weeks": [
+        {
+          "week": "Week 1",
+          "date": "Oct 7",
+          "burnRiskScore": 43.7,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +5.2% over 7 days",
+            "Humidity at 52.8%",
+            "Green cover 12% (below city avg)"
+          ],
+          "dispatchStatus": "Baseline \u2014 no dispatch yet",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 2",
+          "date": "Oct 14",
+          "burnRiskScore": 49.9,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +12.8% over 7 days",
+            "Humidity at 54.9%",
+            "Green cover 12% (below city avg)"
+          ],
+          "dispatchStatus": "Baseline \u2014 no dispatch yet",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 3",
+          "date": "Oct 21",
+          "burnRiskScore": 68.3,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +12.0% over 7 days",
+            "Humidity at 50.6%",
+            "Green cover 12% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 95,
+          "dumpSlotsUsed": 21
+        },
+        {
+          "week": "Week 4",
+          "date": "Oct 28",
+          "burnRiskScore": 68.9,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +17.1% over 7 days",
+            "Humidity at 44.8%",
+            "Post-festival week flag active"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 181,
+          "dumpSlotsUsed": 79
+        },
+        {
+          "week": "Week 5",
+          "date": "Nov 4",
+          "burnRiskScore": 77.4,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +18.6% over 7 days",
+            "Humidity at 45.5%",
+            "Post-festival week flag active"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 83,
+          "dumpSlotsUsed": 30
+        },
+        {
+          "week": "Week 6",
+          "date": "Nov 11",
+          "burnRiskScore": 81.8,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +18.9% over 7 days",
+            "Humidity at 42.5%",
+            "Post-festival week flag active"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 252,
+          "dumpSlotsUsed": 23
+        },
+        {
+          "week": "Week 7",
+          "date": "Nov 18",
+          "burnRiskScore": 72.3,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +17.5% over 7 days",
+            "Humidity at 47.6%",
+            "Green cover 12% (below city avg)"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 389,
+          "dumpSlotsUsed": 43
+        },
+        {
+          "week": "Week 8",
+          "date": "Nov 25",
+          "burnRiskScore": 75.5,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +20.3% over 7 days",
+            "Humidity at 42.6%",
+            "Green cover 12% (below city avg)"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 273,
+          "dumpSlotsUsed": 20
+        },
+        {
+          "week": "Week 9",
+          "date": "Dec 2",
+          "burnRiskScore": 64.1,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +19.0% over 7 days",
+            "Humidity at 41.6%",
+            "Green cover 12% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 265,
+          "dumpSlotsUsed": 83
+        },
+        {
+          "week": "Week 10",
+          "date": "Dec 9",
+          "burnRiskScore": 48.9,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +11.9% over 7 days",
+            "Humidity at 40.2%",
+            "Green cover 12% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 228,
+          "dumpSlotsUsed": 20
+        },
+        {
+          "week": "Week 11",
+          "date": "Dec 16",
+          "burnRiskScore": 44.3,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +13.6% over 7 days",
+            "Humidity at 35.6%",
+            "Green cover 12% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 312,
+          "dumpSlotsUsed": 56
+        },
+        {
+          "week": "Week 12",
+          "date": "Dec 23",
+          "burnRiskScore": 22.6,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +7.1% over 7 days",
+            "Humidity at 36.7%",
+            "Green cover 12% (below city avg)"
+          ],
+          "dispatchStatus": "Not required",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        }
+      ],
+      "current": {
+        "burnRiskScore": 22.6,
+        "riskBand": "Low",
+        "topFeatures": [
+          "AQI trend +7.1% over 7 days",
+          "Humidity at 36.7%",
+          "Green cover 12% (below city avg)"
+        ],
+        "dispatchStatus": "Not required",
+        "pmcResponseTime": "N/A"
+      }
+    },
+    "kharadi": {
+      "info": {
+        "id": "kharadi",
+        "name": "Kharadi",
+        "adminWard": "Admin Ward 07 Nagar Road",
+        "coordinates": [
+          18.5508,
+          73.9442
+        ],
+        "population": 180000,
+        "greenCover": 18,
+        "marketFlag": false,
+        "incomeLevel": "high"
+      },
+      "weeks": [
+        {
+          "week": "Week 1",
+          "date": "Oct 7",
+          "burnRiskScore": 18.4,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +9.1% over 7 days",
+            "Humidity at 50.7%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "Baseline \u2014 no dispatch yet",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 2",
+          "date": "Oct 14",
+          "burnRiskScore": 28.9,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +11.6% over 7 days",
+            "Humidity at 50.6%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "Baseline \u2014 no dispatch yet",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 3",
+          "date": "Oct 21",
+          "burnRiskScore": 37.2,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +13.1% over 7 days",
+            "Humidity at 55.6%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "Not required",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 4",
+          "date": "Oct 28",
+          "burnRiskScore": 48.5,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +15.4% over 7 days",
+            "Humidity at 47.8%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 108,
+          "dumpSlotsUsed": 39
+        },
+        {
+          "week": "Week 5",
+          "date": "Nov 4",
+          "burnRiskScore": 56.2,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +20.7% over 7 days",
+            "Humidity at 46.7%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 113,
+          "dumpSlotsUsed": 37
+        },
+        {
+          "week": "Week 6",
+          "date": "Nov 11",
+          "burnRiskScore": 58.4,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +20.3% over 7 days",
+            "Humidity at 48.1%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 188,
+          "dumpSlotsUsed": 73
+        },
+        {
+          "week": "Week 7",
+          "date": "Nov 18",
+          "burnRiskScore": 49.9,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +22.4% over 7 days",
+            "Humidity at 43.7%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 215,
+          "dumpSlotsUsed": 27
+        },
+        {
+          "week": "Week 8",
+          "date": "Nov 25",
+          "burnRiskScore": 42.7,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +19.3% over 7 days",
+            "Humidity at 39.9%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 379,
+          "dumpSlotsUsed": 64
+        },
+        {
+          "week": "Week 9",
+          "date": "Dec 2",
+          "burnRiskScore": 42.2,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +16.5% over 7 days",
+            "Humidity at 37.6%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 150,
+          "dumpSlotsUsed": 75
+        },
+        {
+          "week": "Week 10",
+          "date": "Dec 9",
+          "burnRiskScore": 26.5,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +16.0% over 7 days",
+            "Humidity at 42.2%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "Not required",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 11",
+          "date": "Dec 16",
+          "burnRiskScore": 9.9,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +9.3% over 7 days",
+            "Humidity at 38.6%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "Not required",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 12",
+          "date": "Dec 23",
+          "burnRiskScore": 5,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +7.3% over 7 days",
+            "Humidity at 36.0%",
+            "Green cover 18% (below city avg)"
+          ],
+          "dispatchStatus": "Not required",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        }
+      ],
+      "current": {
+        "burnRiskScore": 5,
+        "riskBand": "Low",
+        "topFeatures": [
+          "AQI trend +7.3% over 7 days",
+          "Humidity at 36.0%",
+          "Green cover 18% (below city avg)"
+        ],
+        "dispatchStatus": "Not required",
+        "pmcResponseTime": "N/A"
+      }
+    },
+    "wagholi": {
+      "info": {
+        "id": "wagholi",
+        "name": "Wagholi",
+        "adminWard": "Admin Ward 07 Nagar Road",
+        "coordinates": [
+          18.5586,
+          73.9201
+        ],
+        "population": 220000,
+        "greenCover": 8,
+        "marketFlag": true,
+        "incomeLevel": "low",
+        "note": "Coordinates set to Admin Ward 07 Nagar Road centroid (Wagholi fringe)"
+      },
+      "weeks": [
+        {
+          "week": "Week 1",
+          "date": "Oct 7",
+          "burnRiskScore": 53.6,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +6.5% over 7 days",
+            "Humidity at 55.5%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Baseline \u2014 no dispatch yet",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 2",
+          "date": "Oct 14",
+          "burnRiskScore": 70.6,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +12.5% over 7 days",
+            "Humidity at 49.3%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Baseline \u2014 no dispatch yet",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 3",
+          "date": "Oct 21",
+          "burnRiskScore": 80.2,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +16.0% over 7 days",
+            "Humidity at 54.0%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 254,
+          "dumpSlotsUsed": 24
+        },
+        {
+          "week": "Week 4",
+          "date": "Oct 28",
+          "burnRiskScore": 81.8,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +15.0% over 7 days",
+            "Humidity at 44.6%",
+            "Post-festival week flag active"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 214,
+          "dumpSlotsUsed": 74
+        },
+        {
+          "week": "Week 5",
+          "date": "Nov 4",
+          "burnRiskScore": 93.5,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +19.0% over 7 days",
+            "Humidity at 43.8%",
+            "Post-festival week flag active"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 400,
+          "dumpSlotsUsed": 48
+        },
+        {
+          "week": "Week 6",
+          "date": "Nov 11",
+          "burnRiskScore": 95.5,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +19.9% over 7 days",
+            "Humidity at 42.9%",
+            "Post-festival week flag active"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 271,
+          "dumpSlotsUsed": 30
+        },
+        {
+          "week": "Week 7",
+          "date": "Nov 18",
+          "burnRiskScore": 89.7,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +21.5% over 7 days",
+            "Humidity at 44.4%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 80,
+          "dumpSlotsUsed": 86
+        },
+        {
+          "week": "Week 8",
+          "date": "Nov 25",
+          "burnRiskScore": 81.7,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +16.0% over 7 days",
+            "Humidity at 46.6%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 237,
+          "dumpSlotsUsed": 40
+        },
+        {
+          "week": "Week 9",
+          "date": "Dec 2",
+          "burnRiskScore": 70.1,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +19.3% over 7 days",
+            "Humidity at 44.9%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 123,
+          "dumpSlotsUsed": 72
+        },
+        {
+          "week": "Week 10",
+          "date": "Dec 9",
+          "burnRiskScore": 68.4,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +17.4% over 7 days",
+            "Humidity at 39.0%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 144,
+          "dumpSlotsUsed": 26
+        },
+        {
+          "week": "Week 11",
+          "date": "Dec 16",
+          "burnRiskScore": 54.0,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +14.1% over 7 days",
+            "Humidity at 33.5%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 350,
+          "dumpSlotsUsed": 87
+        },
+        {
+          "week": "Week 12",
+          "date": "Dec 23",
+          "burnRiskScore": 37.7,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +6.3% over 7 days",
+            "Humidity at 35.4%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Not required",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        }
+      ],
+      "current": {
+        "burnRiskScore": 37.7,
+        "riskBand": "Low",
+        "topFeatures": [
+          "AQI trend +6.3% over 7 days",
+          "Humidity at 35.4%",
+          "Low-income ward \u2014 sparse sensor coverage"
+        ],
+        "dispatchStatus": "Not required",
+        "pmcResponseTime": "N/A"
+      }
+    },
+    "bhosari": {
+      "info": {
+        "id": "bhosari",
+        "name": "Bhosari",
+        "adminWard": "Admin Ward 01 Aundh",
+        "coordinates": [
+          18.5466,
+          73.7949
+        ],
+        "population": 160000,
+        "greenCover": 10,
+        "marketFlag": false,
+        "incomeLevel": "low",
+        "note": "Coordinates set to Admin Ward 01 Aundh centroid (Bhosari industrial zone)"
+      },
+      "weeks": [
+        {
+          "week": "Week 1",
+          "date": "Oct 7",
+          "burnRiskScore": 45.8,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +6.2% over 7 days",
+            "Humidity at 53.1%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Baseline \u2014 no dispatch yet",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 2",
+          "date": "Oct 14",
+          "burnRiskScore": 60.2,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +12.3% over 7 days",
+            "Humidity at 52.6%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Baseline \u2014 no dispatch yet",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 3",
+          "date": "Oct 21",
+          "burnRiskScore": 64.8,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +12.2% over 7 days",
+            "Humidity at 48.6%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 253,
+          "dumpSlotsUsed": 12
+        },
+        {
+          "week": "Week 4",
+          "date": "Oct 28",
+          "burnRiskScore": 74.3,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +15.4% over 7 days",
+            "Humidity at 46.7%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 116,
+          "dumpSlotsUsed": 90
+        },
+        {
+          "week": "Week 5",
+          "date": "Nov 4",
+          "burnRiskScore": 74.1,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +16.3% over 7 days",
+            "Humidity at 43.0%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 249,
+          "dumpSlotsUsed": 19
+        },
+        {
+          "week": "Week 6",
+          "date": "Nov 11",
+          "burnRiskScore": 80.6,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +18.5% over 7 days",
+            "Humidity at 45.8%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 356,
+          "dumpSlotsUsed": 26
+        },
+        {
+          "week": "Week 7",
+          "date": "Nov 18",
+          "burnRiskScore": 80.9,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +22.2% over 7 days",
+            "Humidity at 44.9%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 204,
+          "dumpSlotsUsed": 70
+        },
+        {
+          "week": "Week 8",
+          "date": "Nov 25",
+          "burnRiskScore": 76.5,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +17.1% over 7 days",
+            "Humidity at 38.2%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 300,
+          "dumpSlotsUsed": 55
+        },
+        {
+          "week": "Week 9",
+          "date": "Dec 2",
+          "burnRiskScore": 63.5,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +16.9% over 7 days",
+            "Humidity at 42.7%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 130,
+          "dumpSlotsUsed": 17
+        },
+        {
+          "week": "Week 10",
+          "date": "Dec 9",
+          "burnRiskScore": 52.5,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +13.5% over 7 days",
+            "Humidity at 42.3%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 207,
+          "dumpSlotsUsed": 34
+        },
+        {
+          "week": "Week 11",
+          "date": "Dec 16",
+          "burnRiskScore": 37.4,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +11.1% over 7 days",
+            "Humidity at 36.0%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Not required",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 12",
+          "date": "Dec 23",
+          "burnRiskScore": 24.9,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +6.5% over 7 days",
+            "Humidity at 39.2%",
+            "Low-income ward \u2014 sparse sensor coverage"
+          ],
+          "dispatchStatus": "Not required",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        }
+      ],
+      "current": {
+        "burnRiskScore": 24.9,
+        "riskBand": "Low",
+        "topFeatures": [
+          "AQI trend +6.5% over 7 days",
+          "Humidity at 39.2%",
+          "Low-income ward \u2014 sparse sensor coverage"
+        ],
+        "dispatchStatus": "Not required",
+        "pmcResponseTime": "N/A"
+      }
+    },
+    "mundhwa": {
+      "info": {
+        "id": "mundhwa",
+        "name": "Mundhwa",
+        "adminWard": "Admin Ward 13 Hadapsar",
+        "coordinates": [
+          18.5136,
+          73.9271
+        ],
+        "population": 195000,
+        "greenCover": 14,
+        "marketFlag": true,
+        "incomeLevel": "mixed"
+      },
+      "weeks": [
+        {
+          "week": "Week 1",
+          "date": "Oct 7",
+          "burnRiskScore": 40.3,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +10.2% over 7 days",
+            "Humidity at 55.5%",
+            "Green cover 14% (below city avg)"
+          ],
+          "dispatchStatus": "Baseline \u2014 no dispatch yet",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 2",
+          "date": "Oct 14",
+          "burnRiskScore": 46.9,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +14.4% over 7 days",
+            "Humidity at 56.5%",
+            "Green cover 14% (below city avg)"
+          ],
+          "dispatchStatus": "Baseline \u2014 no dispatch yet",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 3",
+          "date": "Oct 21",
+          "burnRiskScore": 68.3,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +17.0% over 7 days",
+            "Humidity at 54.9%",
+            "Green cover 14% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 165,
+          "dumpSlotsUsed": 62
+        },
+        {
+          "week": "Week 4",
+          "date": "Oct 28",
+          "burnRiskScore": 71.1,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +15.4% over 7 days",
+            "Humidity at 48.6%",
+            "Post-festival week flag active"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 110,
+          "dumpSlotsUsed": 31
+        },
+        {
+          "week": "Week 5",
+          "date": "Nov 4",
+          "burnRiskScore": 75.9,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +21.8% over 7 days",
+            "Humidity at 45.4%",
+            "Post-festival week flag active"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 312,
+          "dumpSlotsUsed": 46
+        },
+        {
+          "week": "Week 6",
+          "date": "Nov 11",
+          "burnRiskScore": 77.5,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +22.6% over 7 days",
+            "Humidity at 50.9%",
+            "Post-festival week flag active"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 364,
+          "dumpSlotsUsed": 72
+        },
+        {
+          "week": "Week 7",
+          "date": "Nov 18",
+          "burnRiskScore": 72.1,
+          "riskBand": "High",
+          "topFeatures": [
+            "AQI trend +18.7% over 7 days",
+            "Humidity at 48.8%",
+            "Green cover 14% (below city avg)"
+          ],
+          "dispatchStatus": "Dispatched",
+          "smsAlertsSent": 376,
+          "dumpSlotsUsed": 79
+        },
+        {
+          "week": "Week 8",
+          "date": "Nov 25",
+          "burnRiskScore": 65.5,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +17.8% over 7 days",
+            "Humidity at 37.8%",
+            "Green cover 14% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 324,
+          "dumpSlotsUsed": 74
+        },
+        {
+          "week": "Week 9",
+          "date": "Dec 2",
+          "burnRiskScore": 67.5,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +17.3% over 7 days",
+            "Humidity at 36.0%",
+            "Green cover 14% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 340,
+          "dumpSlotsUsed": 20
+        },
+        {
+          "week": "Week 10",
+          "date": "Dec 9",
+          "burnRiskScore": 55.8,
+          "riskBand": "Medium",
+          "topFeatures": [
+            "AQI trend +11.9% over 7 days",
+            "Humidity at 34.3%",
+            "Green cover 14% (below city avg)"
+          ],
+          "dispatchStatus": "On standby",
+          "smsAlertsSent": 200,
+          "dumpSlotsUsed": 61
+        },
+        {
+          "week": "Week 11",
+          "date": "Dec 16",
+          "burnRiskScore": 34.5,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +13.7% over 7 days",
+            "Humidity at 34.3%",
+            "Green cover 14% (below city avg)"
+          ],
+          "dispatchStatus": "Not required",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        },
+        {
+          "week": "Week 12",
+          "date": "Dec 23",
+          "burnRiskScore": 26.7,
+          "riskBand": "Low",
+          "topFeatures": [
+            "AQI trend +8.7% over 7 days",
+            "Humidity at 34.2%",
+            "Green cover 14% (below city avg)"
+          ],
+          "dispatchStatus": "Not required",
+          "smsAlertsSent": 0,
+          "dumpSlotsUsed": 0
+        }
+      ],
+      "current": {
+        "burnRiskScore": 26.7,
+        "riskBand": "Low",
+        "topFeatures": [
+          "AQI trend +8.7% over 7 days",
+          "Humidity at 34.2%",
+          "Green cover 14% (below city avg)"
+        ],
+        "dispatchStatus": "Not required",
+        "pmcResponseTime": "N/A"
+      }
+    }
+  },
+  "esg": {
+    "environmental": {
+      "E1_pm25": {
+        "label": "PM2.5 Reduction",
+        "unit": "\u00b5g/m\u00b3",
+        "baseline": 85,
+        "target": 68,
+        "current": 71.2,
+        "series": [
+          {
+            "week": "Week 1",
+            "date": "Oct 7",
+            "value": 85.3
+          },
+          {
+            "week": "Week 2",
+            "date": "Oct 14",
+            "value": 86.2
+          },
+          {
+            "week": "Week 3",
+            "date": "Oct 21",
+            "value": 88.9
+          },
+          {
+            "week": "Week 4",
+            "date": "Oct 28",
+            "value": 86.6
+          },
+          {
+            "week": "Week 5",
+            "date": "Nov 4",
+            "value": 88.7
+          },
+          {
+            "week": "Week 6",
+            "date": "Nov 11",
+            "value": 86.4
+          },
+          {
+            "week": "Week 7",
+            "date": "Nov 18",
+            "value": 85.9
+          },
+          {
+            "week": "Week 8",
+            "date": "Nov 25",
+            "value": 85.3
+          },
+          {
+            "week": "Week 9",
+            "date": "Dec 2",
+            "value": 81.4
+          },
+          {
+            "week": "Week 10",
+            "date": "Dec 9",
+            "value": 78.7
+          },
+          {
+            "week": "Week 11",
+            "date": "Dec 16",
+            "value": 77.3
+          },
+          {
+            "week": "Week 12",
+            "date": "Dec 23",
+            "value": 71.2
+          }
+        ],
+        "measurementMethod": "CPCB station readings in pilot wards vs. control wards",
+        "frequency": "Weekly (Oct\u2013Feb)"
+      },
+      "E2_wasteDeverted": {
+        "label": "Waste Diverted from Burning",
+        "unit": "tonnes/month",
+        "baseline": 2,
+        "target": 9,
+        "current": 9.4,
+        "series": [
+          {
+            "week": "Week 1",
+            "date": "Oct 7",
+            "value": 2.0
+          },
+          {
+            "week": "Week 2",
+            "date": "Oct 14",
+            "value": 2.9
+          },
+          {
+            "week": "Week 3",
+            "date": "Oct 21",
+            "value": 3.6
+          },
+          {
+            "week": "Week 4",
+            "date": "Oct 28",
+            "value": 3.7
+          },
+          {
+            "week": "Week 5",
+            "date": "Nov 4",
+            "value": 4.4
+          },
+          {
+            "week": "Week 6",
+            "date": "Nov 11",
+            "value": 5.1
+          },
+          {
+            "week": "Week 7",
+            "date": "Nov 18",
+            "value": 6.2
+          },
+          {
+            "week": "Week 8",
+            "date": "Nov 25",
+            "value": 6.8
+          },
+          {
+            "week": "Week 9",
+            "date": "Dec 2",
+            "value": 7.4
+          },
+          {
+            "week": "Week 10",
+            "date": "Dec 9",
+            "value": 7.8
+          },
+          {
+            "week": "Week 11",
+            "date": "Dec 16",
+            "value": 8.3
+          },
+          {
+            "week": "Week 12",
+            "date": "Dec 23",
+            "value": 9.4
+          }
+        ],
+        "measurementMethod": "PMC collection logs from High-risk wards",
+        "frequency": "Monthly"
+      },
+      "E3_fuelSaved": {
+        "label": "Truck Fuel Saved",
+        "unit": "litres/month",
+        "baseline": 0,
+        "target": 90,
+        "current": 84.6,
+        "series": [
+          {
+            "week": "Week 1",
+            "date": "Oct 7",
+            "value": 11.2
+          },
+          {
+            "week": "Week 2",
+            "date": "Oct 14",
+            "value": 17.7
+          },
+          {
+            "week": "Week 3",
+            "date": "Oct 21",
+            "value": 26.9
+          },
+          {
+            "week": "Week 4",
+            "date": "Oct 28",
+            "value": 31.9
+          },
+          {
+            "week": "Week 5",
+            "date": "Nov 4",
+            "value": 35.0
+          },
+          {
+            "week": "Week 6",
+            "date": "Nov 11",
+            "value": 46.9
+          },
+          {
+            "week": "Week 7",
+            "date": "Nov 18",
+            "value": 50.8
+          },
+          {
+            "week": "Week 8",
+            "date": "Nov 25",
+            "value": 60.0
+          },
+          {
+            "week": "Week 9",
+            "date": "Dec 2",
+            "value": 68.6
+          },
+          {
+            "week": "Week 10",
+            "date": "Dec 9",
+            "value": 70.8
+          },
+          {
+            "week": "Week 11",
+            "date": "Dec 16",
+            "value": 77.7
+          },
+          {
+            "week": "Week 12",
+            "date": "Dec 23",
+            "value": 84.6
+          }
+        ],
+        "measurementMethod": "PMC fleet fuel logs vs. pre-pilot baseline",
+        "frequency": "Monthly"
+      }
+    },
+    "social": {
+      "S1_respiratoryComplaints": {
+        "label": "Respiratory Complaint Rate",
+        "unit": "cases/month/ward",
+        "baseline": 38,
+        "target": 28,
+        "current": 30.1,
+        "series": [
+          {
+            "week": "Week 1",
+            "date": "Oct 7",
+            "value": 38.1
+          },
+          {
+            "week": "Week 2",
+            "date": "Oct 14",
+            "value": 36.8
+          },
+          {
+            "week": "Week 3",
+            "date": "Oct 21",
+            "value": 36.8
+          },
+          {
+            "week": "Week 4",
+            "date": "Oct 28",
+            "value": 36.3
+          },
+          {
+            "week": "Week 5",
+            "date": "Nov 4",
+            "value": 34.6
+          },
+          {
+            "week": "Week 6",
+            "date": "Nov 11",
+            "value": 34.8
+          },
+          {
+            "week": "Week 7",
+            "date": "Nov 18",
+            "value": 33.3
+          },
+          {
+            "week": "Week 8",
+            "date": "Nov 25",
+            "value": 33.1
+          },
+          {
+            "week": "Week 9",
+            "date": "Dec 2",
+            "value": 33.2
+          },
+          {
+            "week": "Week 10",
+            "date": "Dec 9",
+            "value": 32.4
+          },
+          {
+            "week": "Week 11",
+            "date": "Dec 16",
+            "value": 30.2
+          },
+          {
+            "week": "Week 12",
+            "date": "Dec 23",
+            "value": 30.1
+          }
+        ],
+        "measurementMethod": "PMC health centre OPD logs (ICD-10 J00\u2013J99)",
+        "frequency": "Monthly"
+      },
+      "S2_smsAdoption": {
+        "label": "SMS Adoption Rate",
+        "unit": "%",
+        "baseline": 0,
+        "target": 25,
+        "current": 28.8,
+        "series": [
+          {
+            "week": "Week 1",
+            "date": "Oct 7",
+            "value": 0
+          },
+          {
+            "week": "Week 2",
+            "date": "Oct 14",
+            "value": 0
+          },
+          {
+            "week": "Week 3",
+            "date": "Oct 21",
+            "value": 3.3
+          },
+          {
+            "week": "Week 4",
+            "date": "Oct 28",
+            "value": 5.9
+          },
+          {
+            "week": "Week 5",
+            "date": "Nov 4",
+            "value": 8.4
+          },
+          {
+            "week": "Week 6",
+            "date": "Nov 11",
+            "value": 11.7
+          },
+          {
+            "week": "Week 7",
+            "date": "Nov 18",
+            "value": 14.1
+          },
+          {
+            "week": "Week 8",
+            "date": "Nov 25",
+            "value": 16.8
+          },
+          {
+            "week": "Week 9",
+            "date": "Dec 2",
+            "value": 19.6
+          },
+          {
+            "week": "Week 10",
+            "date": "Dec 9",
+            "value": 22.4
+          },
+          {
+            "week": "Week 11",
+            "date": "Dec 16",
+            "value": 26.0
+          },
+          {
+            "week": "Week 12",
+            "date": "Dec 23",
+            "value": 28.8
+          }
+        ],
+        "measurementMethod": "Dump-site registrations matched to SMS alerts sent",
+        "frequency": "Weekly"
+      },
+      "S3_equityGap": {
+        "label": "Model Accuracy Equity Gap",
+        "unit": "%",
+        "baseline": null,
+        "target": 10,
+        "current": 10.7,
+        "series": [
+          {
+            "week": "Week 1",
+            "date": "Oct 7",
+            "value": null
+          },
+          {
+            "week": "Week 2",
+            "date": "Oct 14",
+            "value": null
+          },
+          {
+            "week": "Week 3",
+            "date": "Oct 21",
+            "value": null
+          },
+          {
+            "week": "Week 4",
+            "date": "Oct 28",
+            "value": 22.1
+          },
+          {
+            "week": "Week 5",
+            "date": "Nov 4",
+            "value": 21.2
+          },
+          {
+            "week": "Week 6",
+            "date": "Nov 11",
+            "value": 19.2
+          },
+          {
+            "week": "Week 7",
+            "date": "Nov 18",
+            "value": 16.8
+          },
+          {
+            "week": "Week 8",
+            "date": "Nov 25",
+            "value": 15.3
+          },
+          {
+            "week": "Week 9",
+            "date": "Dec 2",
+            "value": 14.1
+          },
+          {
+            "week": "Week 10",
+            "date": "Dec 9",
+            "value": 13.8
+          },
+          {
+            "week": "Week 11",
+            "date": "Dec 16",
+            "value": 12.1
+          },
+          {
+            "week": "Week 12",
+            "date": "Dec 23",
+            "value": 10.7
+          }
+        ],
+        "measurementMethod": "Model precision in low-income vs. high-income pilot wards",
+        "frequency": "Once per season",
+        "note": "First measurement available Week 4 (requires minimum 3 weeks of inference data)"
+      }
+    },
+    "governance": {
+      "G1_auditTrail": {
+        "label": "Dispatch Audit Trail Coverage",
+        "unit": "%",
+        "baseline": 0,
+        "target": 100,
+        "current": 100,
+        "series": [
+          {
+            "week": "Week 1",
+            "date": "Oct 7",
+            "value": 0
+          },
+          {
+            "week": "Week 2",
+            "date": "Oct 14",
+            "value": 45
+          },
+          {
+            "week": "Week 3",
+            "date": "Oct 21",
+            "value": 100
+          },
+          {
+            "week": "Week 4",
+            "date": "Oct 28",
+            "value": 100
+          },
+          {
+            "week": "Week 5",
+            "date": "Nov 4",
+            "value": 100
+          },
+          {
+            "week": "Week 6",
+            "date": "Nov 11",
+            "value": 100
+          },
+          {
+            "week": "Week 7",
+            "date": "Nov 18",
+            "value": 100
+          },
+          {
+            "week": "Week 8",
+            "date": "Nov 25",
+            "value": 100
+          },
+          {
+            "week": "Week 9",
+            "date": "Dec 2",
+            "value": 100
+          },
+          {
+            "week": "Week 10",
+            "date": "Dec 9",
+            "value": 100
+          },
+          {
+            "week": "Week 11",
+            "date": "Dec 16",
+            "value": 100
+          },
+          {
+            "week": "Week 12",
+            "date": "Dec 23",
+            "value": 100
+          }
+        ],
+        "measurementMethod": "% of dispatch decisions with logged burn-risk score + top-3 features",
+        "frequency": "Continuous (reviewed weekly)"
+      },
+      "G2_pmcResponseRate": {
+        "label": "PMC Alert Response Rate",
+        "unit": "%",
+        "baseline": null,
+        "target": 80,
+        "current": 87.1,
+        "series": [
+          {
+            "week": "Week 1",
+            "date": "Oct 7",
+            "value": null
+          },
+          {
+            "week": "Week 2",
+            "date": "Oct 14",
+            "value": null
+          },
+          {
+            "week": "Week 3",
+            "date": "Oct 21",
+            "value": 37.4
+          },
+          {
+            "week": "Week 4",
+            "date": "Oct 28",
+            "value": 38.8
+          },
+          {
+            "week": "Week 5",
+            "date": "Nov 4",
+            "value": 44.5
+          },
+          {
+            "week": "Week 6",
+            "date": "Nov 11",
+            "value": 49.1
+          },
+          {
+            "week": "Week 7",
+            "date": "Nov 18",
+            "value": 58.7
+          },
+          {
+            "week": "Week 8",
+            "date": "Nov 25",
+            "value": 64.8
+          },
+          {
+            "week": "Week 9",
+            "date": "Dec 2",
+            "value": 67.4
+          },
+          {
+            "week": "Week 10",
+            "date": "Dec 9",
+            "value": 74.2
+          },
+          {
+            "week": "Week 11",
+            "date": "Dec 16",
+            "value": 76.9
+          },
+          {
+            "week": "Week 12",
+            "date": "Dec 23",
+            "value": 87.1
+          }
+        ],
+        "measurementMethod": "% of High-risk alerts actioned by PMC within 24 hrs",
+        "frequency": "Weekly",
+        "note": "First measurement available Week 3 (alert system goes live Week 3)"
+      },
+      "G3_openData": {
+        "label": "Open Data Verifiability",
+        "unit": "binary",
+        "baseline": 0,
+        "target": 1,
+        "current": 1,
+        "series": [
+          {
+            "week": "Week 1",
+            "date": "Oct 7",
+            "value": 0
+          },
+          {
+            "week": "Week 2",
+            "date": "Oct 14",
+            "value": 0
+          },
+          {
+            "week": "Week 3",
+            "date": "Oct 21",
+            "value": 0
+          },
+          {
+            "week": "Week 4",
+            "date": "Oct 28",
+            "value": 0
+          },
+          {
+            "week": "Week 5",
+            "date": "Nov 4",
+            "value": 0
+          },
+          {
+            "week": "Week 6",
+            "date": "Nov 11",
+            "value": 1
+          },
+          {
+            "week": "Week 7",
+            "date": "Nov 18",
+            "value": 1
+          },
+          {
+            "week": "Week 8",
+            "date": "Nov 25",
+            "value": 1
+          },
+          {
+            "week": "Week 9",
+            "date": "Dec 2",
+            "value": 1
+          },
+          {
+            "week": "Week 10",
+            "date": "Dec 9",
+            "value": 1
+          },
+          {
+            "week": "Week 11",
+            "date": "Dec 16",
+            "value": 1
+          },
+          {
+            "week": "Week 12",
+            "date": "Dec 23",
+            "value": 1
+          }
+        ],
+        "measurementMethod": "All model inputs publicly cited and independently verifiable",
+        "frequency": "Annual audit (milestone hit at Week 6)",
+        "labels": {
+          "0": "Partial",
+          "1": "Verified"
+        }
+      }
+    }
+  },
+  "phases": {
+    "currentPhase": "Pilot",
+    "currentWeek": 12,
+    "totalWeeks": 12,
+    "phases": [
+      {
+        "name": "Pilot",
+        "months": "Months 1\u20133",
+        "status": "active",
+        "triggerMetrics": [
+          {
+            "metric": "PMC Alert Response Rate",
+            "target": "\u2265 80%",
+            "current": 87.1,
+            "unit": "%",
+            "status": "green"
+          },
+          {
+            "metric": "SMS Adoption Rate",
+            "target": "\u2265 25%",
+            "current": 28.8,
+            "unit": "%",
+            "status": "green"
+          },
+          {
+            "metric": "PM2.5 trending down in 3 of 5 wards",
+            "target": "3 of 5 wards",
+            "current": "4 of 5 wards",
+            "unit": "",
+            "status": "green"
+          }
+        ],
+        "exitCondition": "If PMC Alert Response Rate < 50% at Week 8 \u2192 pause and retrain PMC staff"
+      },
+      {
+        "name": "Expansion",
+        "months": "Months 4\u20139",
+        "status": "pending",
+        "triggerMetrics": [
+          {
+            "metric": "PM2.5 improvement city-wide",
+            "target": "Measurable \u2193",
+            "current": "Pending",
+            "unit": "",
+            "status": "pending"
+          },
+          {
+            "metric": "Model Accuracy Equity Gap",
+            "target": "< 10%",
+            "current": 10.7,
+            "unit": "%",
+            "status": "pending"
+          },
+          {
+            "metric": "Dispatch Audit Trail",
+            "target": "100%",
+            "current": 100,
+            "unit": "%",
+            "status": "green"
+          }
+        ],
+        "exitCondition": "If Model Accuracy Equity Gap > 15% \u2192 fix model for low-income wards before replicating"
+      },
+      {
+        "name": "Full-Scale",
+        "months": "Month 10+",
+        "status": "pending",
+        "triggerMetrics": [],
+        "exitCondition": ""
+      }
+    ]
+  },
+  "replication": {
+    "targetCity": "Nagpur",
+    "conditions": [
+      {
+        "condition": "Model Accuracy Equity Gap below 10%",
+        "status": "amber",
+        "current": "10.7%",
+        "target": "< 10%",
+        "note": "Currently at 10.3% \u2014 0.3% above threshold. On track."
+      },
+      {
+        "condition": "Dispatch Audit Trail at 100%",
+        "status": "green",
+        "current": "100%",
+        "target": "100%",
+        "note": "Met at Week 3. All decisions logged and auditable."
+      },
+      {
+        "condition": "PM2.5 trending down for 2 consecutive seasons",
+        "status": "red",
+        "current": "1 season",
+        "target": "2 seasons",
+        "note": "Pilot is Season 1. Second season (next winter) required."
+      }
+    ],
+    "readinessStatus": "Not yet ready",
+    "readinessNote": "One condition met, one amber, one requiring a second season. Earliest replication: Month 10+"
+  },
+  "diagnostics": [
+    {
+      "id": "d1",
+      "type": "insight",
+      "pillar": "Environmental",
+      "color": "green",
+      "title": "E1 + E2 divergence resolved",
+      "message": "PM2.5 is improving (E1 \u2193) and waste diverted is rising (E2 \u2191). Both moving in the right direction \u2014 collection and air quality are responding together.",
+      "action": "No action required. Continue current dispatch cadence."
+    },
+    {
+      "id": "d2",
+      "type": "warning",
+      "pillar": "Social",
+      "color": "green",
+      "title": "SMS Adoption Rate crossed 25% target",
+      "message": "Adoption hit 27.4% in Week 11 \u2014 above the 25% pilot target. The human layer is working alongside the model.",
+      "action": "Document what drove adoption (language, timing, convenience) for Expansion phase playbook."
+    },
+    {
+      "id": "d3",
+      "type": "insight",
+      "pillar": "Governance",
+      "color": "green",
+      "title": "PMC Alert Response Rate crossed 80% target",
+      "message": "Response rate reached 87.1% by Week 12 \u2014 above the 80% Expansion trigger. PMC officers are acting on model alerts consistently.",
+      "action": "Expansion phase trigger met. Document response workflow for Nagpur replication."
+    },
+    {
+      "id": "d4",
+      "type": "warning",
+      "pillar": "Cross-pillar",
+      "color": "amber",
+      "title": "Model Accuracy Equity Gap at 10.7% \u2014 just above threshold",
+      "message": "Low-income wards (Wagholi, Bhosari) showing 10.7% lower model precision than Kharadi. Must reach <10% before Expansion phase. One trigger blocking scale.",
+      "action": "Review feature coverage in low-sensor wards. Consider satellite PM2.5 proxy for Wagholi and Bhosari."
+    }
+  ]
+}

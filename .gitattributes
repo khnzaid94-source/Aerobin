@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.mkv binary
+*.pptx binary
+*.xlsx binary
+*.docx binary
+*.mkv -diff -merge
