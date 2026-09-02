@@ -12,7 +12,7 @@ import { COLORS } from '../lib/theme'
  * selector (EN/MR/HI). If the AI endpoint is not configured or fails, the
  * panel shows an honest notice — it never pretends to be working.
  */
-export function CitizenChatbot({ wards, weather, summary, demoMode }) {
+export function CitizenChatbot({ wards, weather, fires, summary, demoMode }) {
   const { t, lang } = useI18n()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([]) // {role, text, status?}
@@ -48,6 +48,11 @@ export function CitizenChatbot({ wards, weather, summary, demoMode }) {
     setBusy(true)
     setUnavailable(null)
 
+    const firesById =
+      fires?.status === 'ready'
+        ? Object.fromEntries(fires.data.wards.map((w) => [w.id, w.count]))
+        : null
+
     const context = {
       summary,
       demoMode: Boolean(demoMode),
@@ -59,7 +64,9 @@ export function CitizenChatbot({ wards, weather, summary, demoMode }) {
         dispatchStatus: w.current?.dispatchStatus ?? null,
         livePm25: weather?.readings?.[w.id]?.pm25 ?? null,
         livePm25Source: weather?.readings?.[w.id]?.source ?? null,
+        satelliteHotspots24h: firesById ? firesById[w.id] ?? 0 : null,
       })),
+      satelliteFiresAvailable: fires?.status === 'ready',
     }
 
     const result = await sendChatMessage(

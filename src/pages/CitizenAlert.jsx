@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAerobinData } from '../lib/useAerobinData'
 import { useWeather } from '../lib/useWeather'
 import { useIsMobile } from '../lib/useIsMobile'
+import { useFires } from '../lib/useFires'
 import { useDemoMode } from '../lib/useDemoMode'
 import { LeafletMap } from '../components/LeafletMap'
 import { LiveReading } from '../components/LiveReading'
@@ -11,13 +12,26 @@ import { CitizenChatbot } from '../components/CitizenChatbot'
 import { LoadingScreen, ErrorScreen } from '../components/StateScreen'
 import { riskMeta, COLORS } from '../lib/theme'
 import { formatScore } from '../lib/format'
+import { insertFeedback } from '../lib/supabase'
 
-function FeedbackButtons({ wardId }) {
+// FeedbackButtons takes the whole ward; auditLog-style wardId helper keeps
+// the localStorage key format identical to v1.0 (aerobin.feedback.<id>).
+const wardId = (ward) => ward?.id
+
+function FeedbackButtons({ ward, demoMode }) {
   const [vote, setVote] = useState(() => {
-    try { return localStorage.getItem(`aerobin.feedback.${wardId}`) || null } catch { return null }
+    try { return localStorage.getItem(`aerobin.feedback.${wardId(ward)}`) || null } catch { return null }
   })
   const handle = (v) => {
-    try { localStorage.setItem(`aerobin.feedback.${wardId}`, v) } catch { /* ignore */ }
+    try { localStorage.setItem(`aerobin.feedback.${wardId(ward)}`, v) } catch { /* ignore */ }
+    // Best-effort corpus for Phase 8 analytics; flagged demo when active.
+    insertFeedback({
+      wardId: wardId(ward),
+      wardName: ward.name,
+      vote: v,
+      burnRiskScore: ward.current?.burnRiskScore ?? null,
+      demo: Boolean(demoMode),
+    })
     setVote(v)
   }
   return (
@@ -61,7 +75,7 @@ function confidenceFor(ward) {
   return Math.max(52, Math.min(94, base + sparse + (ward.current.burnRiskScore % 7)))
 }
 
-function WardDetails({ ward, reading }) {
+function WardDetails({ ward, reading, fires }) {
   const meta = riskMeta(ward.current.burnRiskScore)
   const isHigh = meta.band === 'High'
   const [lat, lon] = ward.coordinates
@@ -69,6 +83,9 @@ function WardDetails({ ward, reading }) {
   const humidity = (ward.current.topFeatures?.find(f=>f.includes('Humidity')) ?? '').match(/[\d.]+%/)?.[0] ?? null
   // Distance to Pune centre ~18.53,73.86 as rough city ref for display; real dump is at ward centroid
   const distKm = haversineKm([18.53,73.86], ward.coordinates).toFixed(1)
+
+  const fireCount = fires?.status === 'ready' ? fires.data.wards.find(w => w.id === ward.id)?.count ?? 0 : null
+  const fireLevel = fireCount == null ? null : fireCount === 0 ? 'none' : fireCount <= 3 ? 'low' : 'high'
 
   return (
     <div className="font-body">
@@ -94,6 +111,20 @@ function WardDetails({ ward, reading }) {
           : `No burning alert here right now — regular PMC waste collection stays open as usual.`}
       </p>
 
+      {fireCount != null && (
+        <p
+          className="mt-2 rounded-lg px-2.5 py-2 text-sm leading-snug"
+          style={{
+            background: fireLevel === 'high' ? COLORS.redDim : fireLevel === 'low' ? COLORS.amberDim : COLORS.tealDim,
+            color: fireLevel === 'high' ? COLORS.redText : fireLevel === 'low' ? COLORS.amberText : COLORS.tealText,
+          }}
+        >
+          {fireCount === 0
+            ? '🛰 Satellite: no burning hotspots detected near this ward in the last 24h.'
+            : `🛰 Satellite: ${fireCount} burning hotspot${fireCount > 1 ? 's' : ''} detected near ${ward.name} in the last 24h — avoid burning waste and use the free PMC dump slot.`}
+        </p>
+      )}
+
       <a
         href={`https://maps.google.com/?q=${lat},${lon}`}
         target="_blank"
@@ -103,9 +134,9 @@ function WardDetails({ ward, reading }) {
         Get directions ↗
       </a>
 
-      <LiveReading reading={reading} className="mt-3" />
+      <LiveReading reading={reading} wardId={ward.id} className="mt-3" />
       <MiniTrend ward={ward} />
-      <FeedbackButtons wardId={ward.id} />
+      <FeedbackButtons ward={ward} demoMode={demoMode} />
     </div>
   )
 }
@@ -142,6 +173,7 @@ function WardCompare({ wards, weather }) {
 export function CitizenAlert() {
   const data = useAerobinData()
   const { demoMode } = useDemoMode()
+  const fires = useFires()
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedWardId, setSelectedWardId] = useState(() => searchParams.get('ward') ?? null)
   const [showCompare, setShowCompare] = useState(false)
@@ -201,7 +233,7 @@ export function CitizenAlert() {
           onSelectWard={setSelectedWardId}
           // On mobile the ward panel becomes the bottom sheet below instead
           // of a cramped floating popup, so no renderPopup is passed here.
-          renderPopup={isMobile ? undefined : (ward) => <WardDetails ward={ward} reading={weather.readings[ward.id]} />}
+          renderPopup={isMobile ? undefined : (ward) => <WardDetails ward={ward} reading={weather.readings[ward.id]} fires={fires} />}
           className="h-full w-full"
         />
 
@@ -249,7 +281,7 @@ export function CitizenAlert() {
       {isMobile && (
         <BottomSheet open={Boolean(selectedWard)} onClose={() => setSelectedWardId(null)}>
           {selectedWard && (
-            <WardDetails ward={selectedWard} reading={weather.readings[selectedWard.id]} />
+            <WardDetails ward={selectedWard} reading={weather.readings[selectedWard.id]} fires={fires} />
           )}
         </BottomSheet>
       )}
@@ -257,6 +289,7 @@ export function CitizenAlert() {
       <CitizenChatbot
         wards={wardsWithBand}
         weather={weather}
+        fires={fires}
         summary={data.status === 'ready' ? data.summary : null}
         demoMode={demoMode}
       />
