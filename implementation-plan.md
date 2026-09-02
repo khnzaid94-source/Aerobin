@@ -147,14 +147,17 @@
 
 | Phase | Feature | Status |
 |-------|---------|--------|
-| 5 | AI Insights (Analyst) + Citizen Chatbot — Gemini via serverless | ✅ Shipped (live) |
-| 6 | FIRMS satellite burn detection + PM2.5 anomaly detection + Supabase persistence | 🚧 Built, pending deploy |
+| 5 | AI Insights (Analyst) + Citizen Chatbot — Gemini via serverless | ✅ Shipped (live, verified EN+MR) |
+| 6 | FIRMS satellite burn detection + PM2.5 anomaly detection + Supabase persistence | ✅ Shipped (awaiting FIRMS_MAP_KEY + Supabase env vars) |
 | 7 | Real burn-risk classifier (CPCB + Open-Meteo + FIRMS labels → scikit-learn → ONNX) | ⏳ Planned |
 | 8 | Feedback loop → per-ward precision stats (makes S3 equity gap real) | ⏳ Planned |
 
-### Phase 5 deployment fixes (found during live verification)
-- `fix(api): accept Vercel-parsed JSON bodies` — Vercel auto-parses `application/json`, so handlers now accept object-or-string bodies
-- `fix(api): resolve Gemini model via ListModels` — `gemini-2.0-flash` returned 404 for the project's key; model is now resolved against the account's live model list with a preference chain, self-healing on future renames
+### Phase 5/6 deployment fixes (found during live verification — the early push paid off)
+- `fix(api): accept Vercel-parsed JSON bodies` — Vercel auto-parses `application/json`, so handlers accept object-or-string bodies
+- `fix(api): shared Gemini helper with model-404 fallback chain` — `gemini-2.0-flash` and `gemini-2.5-flash` both 404 ("no longer available to new users"); new `apiLib/gemini.js` resolves the account's live model list, prefers `gemini-flash-latest` (self-updating alias), falls through candidates on 404
+- `fix(api): raise chat token budget` — Gemini 3.x "thinking" tokens consumed the 300 cap, truncating replies mid-sentence → 2048
+- `fix(api): retry once with backoff on transient 429/503` — free-tier overload no longer surfaces as a failure
+- Live verification: chat grounded + Marathi UTF-8 intact; insights cited metric keys with correct status colors; fires endpoint reports `no-api-key` honestly (key pending)
 
 ---
 
