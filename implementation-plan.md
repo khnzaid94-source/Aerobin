@@ -147,10 +147,14 @@
 
 | Phase | Feature | Status |
 |-------|---------|--------|
-| 5 | AI Insights (Analyst) + Citizen Chatbot — Gemini via serverless | 🚧 In progress |
-| 6 | FIRMS satellite burn detection + PM2.5 anomaly detection + Supabase persistence | ⏳ Planned |
+| 5 | AI Insights (Analyst) + Citizen Chatbot — Gemini via serverless | ✅ Shipped (live) |
+| 6 | FIRMS satellite burn detection + PM2.5 anomaly detection + Supabase persistence | 🚧 Built, pending deploy |
 | 7 | Real burn-risk classifier (CPCB + Open-Meteo + FIRMS labels → scikit-learn → ONNX) | ⏳ Planned |
 | 8 | Feedback loop → per-ward precision stats (makes S3 equity gap real) | ⏳ Planned |
+
+### Phase 5 deployment fixes (found during live verification)
+- `fix(api): accept Vercel-parsed JSON bodies` — Vercel auto-parses `application/json`, so handlers now accept object-or-string bodies
+- `fix(api): resolve Gemini model via ListModels` — `gemini-2.0-flash` returned 404 for the project's key; model is now resolved against the account's live model list with a preference chain, self-healing on future renames
 
 ---
 
@@ -181,11 +185,12 @@
 
 ---
 
-## Phase 6 — Real-Time Intelligence + Persistence ⏳
+## Phase 6 — Real-Time Intelligence + Persistence 🚧 BUILT
 
-- **FIRMS satellite hotspots:** `api/fires.js` — NASA FIRMS MAP key (free, ~24h approval), Pune bounding box, active fire pixels mapped to wards via `pune-admin-wards.geojson` point-in-polygon; "satellite-detected burning activity" badge on the citizen map.
-- **PM2.5 anomaly detection:** client-side rolling z-score over `useWeather` readings; flags "unusual spike vs recent readings" alongside OWM's own AQI bands; pure frontend, no key.
-- **Supabase (free):** `feedback` + `dispatch_log` tables replace `localStorage`-only persistence (cross-device audit trail, real feedback corpus).
+- **FIRMS satellite hotspots:** `api/fires.js` — NASA FIRMS MAP_KEY (free), Pune bbox, VIIRS S-NPP NRT (375 m, best for small waste fires), hotspots attributed to nearest ward centroid ≤5 km (polygons deliberately NOT used — several pilot wards share/proxy boundaries, see `useWardGeoJSON.js`); 30-min module cache; `src/lib/useFires.js` hook; Citizen `WardDetails` satellite line (teal/amber/red by count) + chatbot grounding field `satelliteHotspots24h`.
+- **PM2.5 anomaly detection:** `src/lib/anomaly.js` — localStorage history per ward (cap 20, 72h window), z-score ≥ 2.5 with ≥ 6 readings required, flat-baseline guard (std < 0.5); `useWeather` feeds successful live readings only (fallback values would poison variance); `LiveReading` renders "Unusual spike vs recent readings" badge (Citizen + Dispatch).
+- **Supabase (free):** `@supabase/supabase-js`; `src/lib/supabase.js` (null-client degradation when unconfigured); `supabase/schema.sql` — append-only `feedback` + `dispatch_log` tables with RLS (anon INSERT-only on feedback, INSERT+SELECT on dispatch_log, no update/delete ever); `auditLog.makeDispatchEntry` write-through with `demo` flag (demo actions never pollute the real corpus); DispatchConsole merges remote non-demo rows from last 24h on mount (local wins on id); "Cross-device sync on / Local session only" indicator; `FeedbackButtons` votes post to `feedback` with ward + score + demo flag.
+- Deployment env vars: `FIRMS_MAP_KEY` (server), `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (client, RLS-protected).
 
 ## Phase 7 — Real Burn-Risk Classifier ⏳
 

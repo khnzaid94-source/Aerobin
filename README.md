@@ -58,6 +58,8 @@ React 19 + Vite 8 + `react-router-dom:7.18.1` (lazy chunks per app `src/App.jsx:
 
 **AI (v2.0):** Gemini Flash via Vercel serverless functions in `api/` (keys stay server-side) — AI Insights for the Analyst (`api/insights.js`) and a grounded multilingual citizen assistant (`api/chat.js`). Without `GEMINI_API_KEY` both features show an honest "not configured" notice and every v1.0 feature keeps working.
 
+**Real-time + persistence (v2.0):** NASA FIRMS satellite burn detection (`api/fires.js` — VIIRS hotspots attributed to nearest ward centroid ≤5 km, 30-min cache), client-side PM2.5 anomaly detection (`src/lib/anomaly.js` — rolling z-score ≥2.5σ vs the ward's own recent history; no claim until ≥6 readings), and Supabase persistence (`supabase/schema.sql` — append-only `dispatch_log` + `feedback` under RLS) so dispatch actions and citizen votes survive across devices. Demo-mode writes are flagged `demo: true` and excluded from analytics. Every feature degrades honestly when unconfigured.
+
 ---
 
 ## Getting Started
@@ -88,7 +90,9 @@ Free Hobby tier, zero config — the repo already includes `vercel.json` (SPA re
 1. vercel.com → Add New → Project → Import this repo → Vite preset auto-detected
 2. Environment Variables → `VITE_OPENWEATHER_API_KEY` = your key (Production + Preview)
 3. Environment Variables → `GEMINI_API_KEY` = your Gemini key from https://aistudio.google.com/apikey (Production + Preview) — enables AI Insights + the citizen assistant; server-side only, never exposed to the client bundle
-4. Deploy → every future `git push` to `main` auto-redeploys
+4. Environment Variables → `FIRMS_MAP_KEY` = your free MAP_KEY from https://firms.modaps.eosdis.nasa.gov/api/area/ (Production + Preview) — enables satellite burn detection; server-side only
+5. Environment Variables → `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` from your Supabase project (Settings → API) after running `supabase/schema.sql` in its SQL Editor — enables cross-device dispatch log + feedback corpus
+6. Deploy → every future `git push` to `main` auto-redeploys
 
 Requires Node `>=18` (`package.json:6` `engines`, `.nvmrc:1` `20`). See `jsconfig.json` for `checkJs` IDE hints (Option A — no TS migration).
 
@@ -114,12 +118,13 @@ src/
   components/ TopNav.jsx, Card.jsx, LeafletMap.jsx, Sparkline.jsx, PilotPlayback.jsx,
               LiveReading.jsx, BottomSheet.jsx, CardAccentArt.jsx, StateScreen.jsx,
               ErrorBoundary.jsx, CitizenChatbot.jsx
-  lib/        useAerobinData.js, useWardGeoJSON.js, useWeather.js, useIsMobile.js,
+  lib/        useAerobinData.js, useWardGeoJSON.js, useWeather.js, useFires.js, useIsMobile.js,
               DemoContext.js/DemoProvider.jsx/useDemoMode.js, demoOverrides.js,
               theme.js, esgStatus.js, auditLog.js, exportReport.js, format.js,
-              i18n.jsx, aiClient.js, registerSW.js
+              i18n.jsx, aiClient.js, anomaly.js, supabase.js, registerSW.js
   pages/      AppMenu.jsx, CitizenAlert.jsx, DispatchConsole.jsx, ImpactAnalyst.jsx
-api/          insights.js (AI Insights), chat.js (citizen assistant) — Vercel serverless
+api/          insights.js (AI Insights), chat.js (citizen assistant), fires.js (FIRMS satellite) — Vercel serverless
+supabase/     schema.sql (tables + RLS policies — run once in Supabase SQL Editor)
 public/       leaf.svg, manifest.json, sw.js, data/ aerobin_data.json, pune-admin-wards.geojson
 Project Submissions/  1A–4B docs, Prototype Video.mkv (65 MB, direct push), Portfolio pptx
 docs/         CONTRAST_FIX.md, DATA_MODEL.md, ROADMAP.md

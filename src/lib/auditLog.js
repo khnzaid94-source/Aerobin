@@ -1,3 +1,5 @@
+import { insertDispatchEntry } from './supabase'
+
 const STORAGE_KEY = 'aerobin.dispatch.auditLog.v1'
 
 // Translates the pilot data's own dispatchStatus strings into an audit-log
@@ -80,8 +82,8 @@ export function clearAuditLog() {
   }
 }
 
-export function makeDispatchEntry({ ward, action }) {
-  return {
+export function makeDispatchEntry({ ward, action }, { demo = false } = {}) {
+  const entry = {
     id: `${ward.id}-${Date.now()}`,
     wardId: ward.id,
     wardName: ward.name,
@@ -91,6 +93,10 @@ export function makeDispatchEntry({ ward, action }) {
     time: Date.now(),
     session: true,
   }
+  // Best-effort write-through to Supabase (append-only audit trail across
+  // devices). Demo actions are flagged so analytics can exclude them.
+  insertDispatchEntry(entry, { demo })
+  return entry
 }
 
 /** Stats for entries logged live during this browser session (not seed data). */
