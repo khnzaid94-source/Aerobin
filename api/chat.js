@@ -8,8 +8,39 @@
 // key the endpoint reports { available: false } and the widget shows an
 // honest "not configured" notice.
 
-const GEMINI_MODEL = 'gemini-2.0-flash'
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta'
+// Preferred models in order; resolved against the live ListModels endpoint
+// once per lambda instance so a renamed/retired model never breaks chat.
+const MODEL_PREFERENCE = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-flash-latest',
+  'gemini-1.5-flash',
+]
+let resolvedModel = null
+
+async function resolveModel(apiKey) {
+  if (resolvedModel) return resolvedModel
+  try {
+    const res = await fetch(`${GEMINI_BASE}/models`, {
+      headers: { 'x-goog-api-key': apiKey },
+      signal: AbortSignal.timeout(8000),
+    })
+    if (res.ok) {
+      const json = await res.json()
+      const names = new Set(
+        (json?.models ?? [])
+          .map((m) => (m.name ?? '').replace('models/', ''))
+          .filter((n) => n && !n.includes('embedding') && !n.includes('tts') && !n.includes('image'))
+      )
+      resolvedModel = MODEL_PREFERENCE.find((m) => names.has(m)) ?? [...names].find((n) => n.includes('flash')) ?? null
+    }
+  } catch {
+    // fall through to static preference
+  }
+  if (!resolvedModel) resolvedModel = MODEL_PREFERENCE[0]
+  return resolvedModel
+}
 
 const LANG_NAME = { en: 'English', mr: 'Marathi (Devanagari script)', hi: 'Hindi (Devanagari script)' }
 
@@ -17,16 +48,17 @@ function systemPromptFor(lang) {
   const replyLang = LANG_NAME[lang] ?? 'English'
   return `You are the AeroBin Citizen Assistant for an open waste burning early-warning pilot in Pune, India. You help residents understand their ward's air quality and what to do about it.
 
-You will be given TODAY'S pilot context: each ward's burn-risk score (0-100), risk band (Low <40, Medium 40-69, High >=70), top contributing features, free PMC dump-slot availability, and the pilot summary.
+You will be given TODAY'S pilot context: each ward's burn-risk score (0-100), risk band (Low <40, Medium 40-69, High >=70), top contributing features, free PMC dump-slot availability, live PM2.5 where available, and satellite fire-hotspot counts for the last 24h (NASA FIRMS) when available.
 
 STRICT RULES:
 1. Answer ONLY about the 5 pilot wards (Hadapsar, Kharadi, Wagholi, Bhosari, Mundhwa), their scores, burning risk, air quality, waste disposal, and the pilot itself.
 2. If a question is about anything else — other cities, politics, general knowledge, personal advice — politely decline and offer to explain ward risk or where to dump waste instead.
 3. Use ONLY the numbers in the provided context. Never invent values. If the context doesn't contain the answer, say you don't have that information yet.
-4. Be brief: 1-3 sentences, plain language a resident understands. No markdown headings, no bullet lists longer than 3 items.
-5. When a ward is High risk, remind the resident they can use the free PMC dump slot today instead of burning waste.
-6. Reply in ${replyLang}.
-7. Respond ONLY with the assistant's reply text — no labels, no preamble.`
+4. When satelliteHotspots24h is present (not null), treat it as observed burning activity near that ward in the last 24h — mention it when relevant to burning questions. When it is null or satelliteFiresAvailable is false, say satellite data is not available right now rather than guessing.
+5. Be brief: 1-3 sentences, plain language a resident understands. No markdown headings, no bullet lists longer than 3 items.
+6. When a ward is High risk, remind the resident they can use the free PMC dump slot today instead of burning waste.
+7. Reply in ${replyLang}.
+8. Respond ONLY with the assistant's reply text — no labels, no preamble.`
 }
 
 // Keep the injected context small: only what the answers need.
@@ -34,6 +66,7 @@ function compactWardContext(context) {
   return {
     pilotSummary: context.summary ?? null,
     demoMode: context.demoMode ?? false,
+    satelliteFiresAvailable: context.satelliteFiresAvailable ?? false,
     wards: (context.wards ?? []).map((w) => ({
       name: w.name,
       burnRiskScore: w.burnRiskScore,
@@ -42,6 +75,7 @@ function compactWardContext(context) {
       dispatchStatus: w.dispatchStatus,
       livePm25: w.livePm25 ?? null,
       livePm25Source: w.livePm25Source ?? null,
+      satelliteHotspots24h: w.satelliteHotspots24h ?? null,
     })),
   }
 }
@@ -108,7 +142,8 @@ export default async function handler(request, response) {
   const timer = setTimeout(() => controller.abort(), 15000)
 
   try {
-    const res = await fetch(GEMINI_URL, {
+    const model = await resolveModel(apiKey)
+    const res = await fetch(`${GEMINI_BASE}/models/${model}:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -126,7 +161,7 @@ export default async function handler(request, response) {
     })
 
     if (!res.ok) {
-      response.status(200).json({ available: false, reason: `gemini-${res.status}` })
+      response.status(200).json({ available: false, reason: `gemini-${res.status}-${model}` })
       return
     }
 

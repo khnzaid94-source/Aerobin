@@ -7,8 +7,39 @@
 // { available: false } so the UI can honestly say AI is not configured
 // instead of pretending.
 
-const GEMINI_MODEL = 'gemini-2.0-flash'
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta'
+// Preferred models in order; resolved against the live ListModels endpoint
+// once per lambda instance so a renamed/retired model never breaks insights.
+const MODEL_PREFERENCE = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-flash-latest',
+  'gemini-1.5-flash',
+]
+let resolvedModel = null
+
+async function resolveModel(apiKey) {
+  if (resolvedModel) return resolvedModel
+  try {
+    const res = await fetch(`${GEMINI_BASE}/models`, {
+      headers: { 'x-goog-api-key': apiKey },
+      signal: AbortSignal.timeout(8000),
+    })
+    if (res.ok) {
+      const json = await res.json()
+      const names = new Set(
+        (json?.models ?? [])
+          .map((m) => (m.name ?? '').replace('models/', ''))
+          .filter((n) => n && !n.includes('embedding') && !n.includes('tts') && !n.includes('image'))
+      )
+      resolvedModel = MODEL_PREFERENCE.find((m) => names.has(m)) ?? [...names].find((n) => n.includes('flash')) ?? null
+    }
+  } catch {
+    // fall through to static preference
+  }
+  if (!resolvedModel) resolvedModel = MODEL_PREFERENCE[0]
+  return resolvedModel
+}
 
 const SYSTEM_PROMPT = `You are the analytical engine of AeroBin, an open waste burning early-warning pilot across 5 wards in Pune, India (Hadapsar, Kharadi, Wagholi, Bhosari, Mundhwa).
 
@@ -75,7 +106,8 @@ export default async function handler(request, response) {
   const timer = setTimeout(() => controller.abort(), 15000)
 
   try {
-    const res = await fetch(GEMINI_URL, {
+    const model = await resolveModel(apiKey)
+    const res = await fetch(`${GEMINI_BASE}/models/${model}:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -98,7 +130,7 @@ export default async function handler(request, response) {
     })
 
     if (!res.ok) {
-      response.status(200).json({ available: false, reason: `gemini-${res.status}` })
+      response.status(200).json({ available: false, reason: `gemini-${res.status}-${model}` })
       return
     }
 
