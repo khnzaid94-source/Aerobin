@@ -236,6 +236,19 @@ export function CitizenAlert() {
           renderPopup={isMobile ? undefined : (ward) => <WardDetails ward={ward} reading={weather.readings[ward.id]} fires={fires} />}
           className="h-full w-full"
         />
+
+        {/* Chat widget anchored INSIDE the map wrapper (absolute, not fixed)
+            so it positions against the map itself — always above the OSM
+            attribution line, and immune to the demo banner shifting the
+            viewport math. It is a sibling of the map container, so Leaflet's
+            internal panes never sit above it. */}
+        <CitizenChatbot
+          wards={wardsWithBand}
+          weather={weather}
+          fires={fires}
+          summary={data.status === 'ready' ? data.summary : null}
+          demoMode={demoMode}
+        />
       </div>
 
       {/* Today banner — in page flow BELOW the map (not an overlay), so it
@@ -286,14 +299,6 @@ export function CitizenAlert() {
           )}
         </BottomSheet>
       )}
-
-      <CitizenChatbot
-        wards={wardsWithBand}
-        weather={weather}
-        fires={fires}
-        summary={data.status === 'ready' ? data.summary : null}
-        demoMode={demoMode}
-      />
     </div>
   )
 }

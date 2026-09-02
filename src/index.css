@@ -114,6 +114,12 @@ body,
   font-family: var(--font-body);
   background: #e6e9e8;
 }
+/* OSM credit must stay visible (license requirement) but the map's
+   bottom-right corner belongs to the Ask AeroBin chat bubble — so the
+   attribution stacks its text above the bubble instead of under it. */
+.leaflet-bottom.leaflet-right {
+  right: 68px; /* clear the 48px FAB + 12px margins */
+}
 .leaflet-popup-content-wrapper {
   border-radius: 12px;
   box-shadow: 0 8px 28px rgba(16, 15, 28, 0.22);
@@ -336,12 +342,13 @@ body,
   }
 }
 
-/* Floating "Ask AeroBin" button (Citizen) — banner is in page flow below
-   the map now, so this only needs to clear the banner strip (~88px). */
+/* Floating "Ask AeroBin" button (Citizen) — absolute inside the map wrapper
+   so it tracks the map, not the viewport: immune to the demo banner shifting
+   page height, and offset above Leaflet's OSM attribution line (bottom-right). */
 .ab-chat-fab {
-  position: fixed;
-  right: 16px;
-  bottom: 108px;
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
   z-index: 650;
   display: flex;
   align-items: center;
@@ -356,18 +363,19 @@ body,
   transform: scale(1.06);
 }
 
-/* Chat panel — floating card on desktop, full-width sheet on mobile */
+/* Chat panel — opens upward from the FAB, stays inside the map wrapper.
+   Leaflet's attribution sits ~20px tall at the map's bottom-right; the
+   FAB (48px + 12px bottom) clears it, and the panel stacks above the FAB. */
 .ab-chat-panel {
-  position: fixed;
-  right: 16px;
-  bottom: 168px;
+  position: absolute;
+  right: 12px;
+  bottom: 68px;
   z-index: 650;
   display: flex;
   flex-direction: column;
   width: 340px;
-  max-width: calc(100vw - 32px);
-  height: 420px;
-  max-height: calc(100dvh - 240px);
+  max-width: calc(100% - 24px);
+  height: min(420px, 60%);
   border-radius: 16px;
   background: var(--color-white);
   box-shadow: 0 16px 48px rgba(10, 12, 15, 0.35);
@@ -383,22 +391,20 @@ body,
 }
 @media (max-width: 639px) {
   .ab-chat-panel {
+    /* Mobile: fixed full-width sheet over everything (the map wrapper is
+       too short for a usable in-map panel on phones) */
+    position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     width: 100%;
     max-width: 100%;
     height: 72dvh;
-    max-height: none;
     border-radius: 20px 20px 0 0;
     transform: translateY(100%);
   }
   .ab-chat-panel[data-open="true"] {
     transform: translateY(0);
-  }
-  /* Mobile: FAB sits above the in-flow banner, clear of the map */
-  .ab-chat-fab {
-    bottom: 150px;
   }
 }
 
