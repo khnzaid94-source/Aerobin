@@ -149,18 +149,27 @@
 |-------|---------|--------|
 | 5 | AI Insights (Analyst) + Citizen Chatbot — Gemini via serverless | ✅ Shipped (live, verified EN+MR) |
 | 6 | FIRMS satellite burn detection + PM2.5 anomaly detection + Supabase persistence | ✅ Shipped & fully verified (RLS battery green) |
-| 7 | Real burn-risk classifier (CPCB + Open-Meteo + FIRMS labels → scikit-learn → ONNX) | ⏳ Planned |
-| 8 | Feedback loop → per-ward precision stats (makes S3 equity gap real) | ⏳ Planned |
+| 7 | Real burn-risk classifier (Open-Meteo + FIRMS labels → scikit-learn → ONNX in-browser) | 🚧 Next — recipe locked below |
+| 8 | Live feedback analytics | ⏸ Deferred (needs real accumulated usage; S3 measurement folded into Phase 7 `/model` page) |
 
 ### Phase 5/6 deployment fixes (found during live verification — the early push paid off)
 - `fix(api): accept Vercel-parsed JSON bodies` — Vercel auto-parses `application/json`, so handlers accept object-or-string bodies
 - `fix(api): shared Gemini helper with model-404 fallback chain` — `gemini-2.0-flash` and `gemini-2.5-flash` both 404 ("no longer available to new users"); new `apiLib/gemini.js` resolves the account's live model list, prefers `gemini-flash-latest` (self-updating alias), falls through candidates on 404
 - `fix(api): raise chat token budget` — Gemini 3.x "thinking" tokens consumed the 300 cap, truncating replies mid-sentence → 2048
 - `fix(api): retry once with backoff on transient 429/503` — free-tier overload no longer surfaces as a failure
-- Live verification: chat grounded + Marathi UTF-8 intact; insights cited metric keys with correct status colors; fires endpoint returns real VIIRS hotspot data
+- `perf(chat): lite model chain` — full-size 3.x models spend 5–25s "thinking" on 2-sentence grounded replies AND reject every `thinkingConfig` override (`thinkingBudget` AND `thinkingLevel` both 400 INVALID_ARGUMENT). Model choice is the only latency lever: chat now uses the flash-lite chain (grounded replies in ~1.2–1.6s), insights keeps the full chain (thinking on, 10–25s by design)
+- `fix(api): deadline-aware budget` — server caps the whole fallback chain at 25s total (retry only if budget has room); frontend waits 35s so the server's verdict always arrives before the browser gives up; "Thinking…" honestly notes free-tier latency
+- `fix(citizen): WardDetails crash` — FeedbackButtons referenced a scope-leaked `demoMode`; now reads the context hook directly
+- `fix(citizen): Today banner overlapped markers and clipped popups` — banner was an absolute overlay inside the map (z-600); moved into page flow below the map where it can never overlap
+- `fix(map): zoom controls overlapped chat bubble` — `bottomright` → `topleft`; default view one level wider (zoom 12→11) + 220px bottom padding in fitBounds so bottom-marker popups have room without auto-panning
+- `fix(citizen): chat bubble position drifted between demo/real modes` — FAB/panel were `position:fixed` (viewport-anchored) so the demo banner's height shift moved them relative to the map; now `position:absolute` inside the map wrapper (tracks the map, identical in both modes); OSM attribution shifted left of the bubble (credit stays visible)
 - Supabase marketplace integration injects vars as `SUPABASE_*` (no `VITE_` prefix) → added `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` aliases via Vercel CLI in all 3 environments; service-role key deliberately never copied
 - `fix(db): make schema idempotent` — policies drop+recreate so partial pastes self-heal
 - RLS verification gotcha (documented for future contributors): probes with `Prefer: return=representation` fail on `feedback` because the read-back needs a SELECT policy the table intentionally lacks — insert-only is by design; test with plain POST (201), not representation read-back
+
+### Standing roadmap order (locked 2026-09)
+1. Phase 7a dataset → 7b train + metrics checkpoint (notebook-first, run in Colab) → 7c integrate (ONNX in-browser, `/model` page)
+2. Final README rewrite + fresh screenshots at closing (user captures; filenames in `SS/` stay the same)
 
 ---
 
@@ -198,14 +207,28 @@
 - **Supabase (free):** `@supabase/supabase-js`; `src/lib/supabase.js` (null-client degradation when unconfigured); `supabase/schema.sql` — append-only `feedback` + `dispatch_log` tables with RLS (anon INSERT-only on feedback, INSERT+SELECT on dispatch_log, no update/delete ever); `auditLog.makeDispatchEntry` write-through with `demo` flag (demo actions never pollute the real corpus); DispatchConsole merges remote non-demo rows from last 24h on mount (local wins on id); "Cross-device sync on / Local session only" indicator; `FeedbackButtons` votes post to `feedback` with ward + score + demo flag.
 - Deployment env vars: `FIRMS_MAP_KEY` (server), `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (client, RLS-protected).
 
-## Phase 7 — Real Burn-Risk Classifier ⏳
+## Phase 7 — Real Burn-Risk Classifier 🚧 NEXT (recipe locked)
 
-- **Dataset:** CPCB daily AQI (2022–24) + Open-Meteo historical weather per ward + FIRMS hotspot-in-polygon labels (real ground truth, free public data — solves the "simulated data can't train a model" blocker).
-- **Model:** scikit-learn Logistic Regression + Gradient Boosting (exactly the 3B AI Workflow design); features = AQI 7-day trend, humidity, green cover, festival calendar flags; calibrated probabilities → real confidence.
-- **Deployment:** ONNX export → `onnxruntime-web` client-side, or `api/predict.js` pre-compute.
-- **UI:** replaces static `burnRiskScore` + fake `confidenceFor()` heuristic (`CitizenAlert.jsx`) with genuine model output; `/model` model-card page (training data, features, accuracy, limitations) — flagship interview artifact.
+**Decisions locked:** notebook-first (run in Colab, review metrics at checkpoint before integration) · ONNX served **in-browser** via `onnxruntime-web` (free, offline-friendly, PWA-aligned) · S3 equity measurement folded into the `/model` page · pilot's static scores stay untouched (model is a parallel "Model v0.1 live" view) · all training data from free public sources, zero new accounts.
 
-## Phase 8 — Feedback → Learning Loop ⏳
+**Data sources:**
+- **Open-Meteo Archive API** — daily weather per ward 2022–24 (humidity, temp max, precipitation, wind). Free, no key.
+- **Open-Meteo Air Quality API** — daily PM2.5 (CAMS reanalysis, gridded → consistent coverage for all 5 wards, no sparse-station problem). Free, no key.
+- **NASA FIRMS SP collections** (`VIIRS_SNPP_SP`) — historical hotspots back to 2022 (the live NRT feed we use in `api/fires.js` only reaches ~2 months back; SP covers the full training window). Existing MAP key, ~220 chunked requests, well inside the 5000/10min limit.
 
-- Supabase feedback rows + dispatch outcomes become "was the model right" labels.
-- Per-ward precision stat computed live → S3 "Model Accuracy Equity Gap" becomes measured, not narrated.
+**7a. `training/01_build_dataset.ipynb`:**
+1. Fetch weather + PM2.5 for the 5 ward coordinates, Jan 2022 → Dec 2024 (~1,095 days × 5 wards)
+2. Fetch FIRMS SP for the Pune bbox, chunked ≤5 days per request, 1s sleep, hotspots attributed to wards via the **same ≤5km-centroid rule as `api/fires.js`** (training/live consistency)
+3. **Labels:** ward-day = burn day if hotspots ≥ threshold that day or the next (48h framing per the 3B doc); threshold (1 vs 2) is a reported hyperparameter — Bhosari industrial false-positives at threshold 1 are a documented confound for the model card
+4. **Features:** PM2.5 level + 7-day slope, humidity (mean + trend), dryness (days since rain), wind, green cover %, market/income flags (from `aerobin_data.json`), festival-window flags (Diwali etc.), day-of-year seasonality (sin/cos)
+5. Commit the processed CSV to `training/` (~5,500 rows) — deterministic reruns, full data lineage for the model card
+
+**7b. `training/02_train_model.ipynb`:** Logistic Regression + Gradient Boosting (the 3B design); **time-series split** (train '22–'23, test '24 — never random shuffle); class weights for imbalance; report **AUPRC + per-ward precision** (not just accuracy — rare events make accuracy lie); calibrated probabilities → real confidence scores; export winner to ONNX (~50KB) → `public/models/burn-risk-v0.1.onnx` + metrics JSON sidecar. **Checkpoint: review metrics together before integration.**
+
+**7c. Integration:** `onnxruntime-web` runs the model client-side; new `useBurnRisk` hook computes the same features from live data; Citizen/Dispatch get a parallel "Model v0.1 live" view with honest labeling (a calibrated rare-event model will rarely say ≥70% — showing that truthfully is the point); `/model` model-card route (features, data sources, metrics, **per-ward test-set precision = S3 equity gap made measurable**, limitations). **Model card honesty: this is a pipeline demonstrator on real data, not a production predictor — Pune CPCB coverage is patchy and FIRMS 375m pixels miss many small waste fires.**
+
+## Phase 8 — Live Feedback Analytics ⏸ DEFERRED
+
+- Supabase feedback + dispatch outcomes → live "was the model right" labels and per-ward precision.
+- Deferred: with test rows wiped, there is no real corpus yet. Needs accumulated real usage first.
+- The S3 "Model Accuracy Equity Gap" measurement (from Phase 7's held-out test split) lives on `/model` instead — historically measured now, live-measured later.
