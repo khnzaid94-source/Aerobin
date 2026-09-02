@@ -130,6 +130,15 @@ function AuditRow({ entry }) {
         <p className="truncate text-navy">
           <span className="font-semibold">{entry.wardName}</span>
           <span className="text-slate-soft"> · score {formatScore(entry.score)}</span>
+          {entry.remote && (
+            <span
+              className="ml-1.5 rounded-full px-1.5 py-0.5 font-sans text-[10px] font-semibold"
+              style={{ background: COLORS.tealDim, color: COLORS.tealText }}
+              title="Logged from another device — synced via Supabase"
+            >
+              ↺ synced
+            </span>
+          )}
         </p>
         <p className="text-slate-soft">{entry.result}</p>
       </div>

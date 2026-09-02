@@ -14,19 +14,19 @@ import { riskMeta, COLORS } from '../lib/theme'
 import { formatScore } from '../lib/format'
 import { insertFeedback } from '../lib/supabase'
 
-// FeedbackButtons takes the whole ward; auditLog-style wardId helper keeps
-// the localStorage key format identical to v1.0 (aerobin.feedback.<id>).
-const wardId = (ward) => ward?.id
-
-function FeedbackButtons({ ward, demoMode }) {
+// FeedbackButtons takes the whole ward; the localStorage key keeps the
+// v1.0 format (aerobin.feedback.<id>). Demo mode is read from context
+// directly — no prop drilling through WardDetails.
+function FeedbackButtons({ ward }) {
+  const { demoMode } = useDemoMode()
   const [vote, setVote] = useState(() => {
-    try { return localStorage.getItem(`aerobin.feedback.${wardId(ward)}`) || null } catch { return null }
+    try { return localStorage.getItem(`aerobin.feedback.${ward.id}`) || null } catch { return null }
   })
   const handle = (v) => {
-    try { localStorage.setItem(`aerobin.feedback.${wardId(ward)}`, v) } catch { /* ignore */ }
+    try { localStorage.setItem(`aerobin.feedback.${ward.id}`, v) } catch { /* ignore */ }
     // Best-effort corpus for Phase 8 analytics; flagged demo when active.
     insertFeedback({
-      wardId: wardId(ward),
+      wardId: ward.id,
       wardName: ward.name,
       vote: v,
       burnRiskScore: ward.current?.burnRiskScore ?? null,
@@ -136,7 +136,7 @@ function WardDetails({ ward, reading, fires }) {
 
       <LiveReading reading={reading} wardId={ward.id} className="mt-3" />
       <MiniTrend ward={ward} />
-      <FeedbackButtons ward={ward} demoMode={demoMode} />
+      <FeedbackButtons ward={ward} />
     </div>
   )
 }
