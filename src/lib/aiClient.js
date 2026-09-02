@@ -6,7 +6,10 @@
 // whether it is showing real AI output or a fallback, so nothing silently
 // fakes intelligence.
 
-const TIMEOUT_MS = 15000
+// Must comfortably exceed the server's TOTAL_BUDGET_MS (25s in
+// apiLib/gemini.js) so the server always delivers its own verdict before
+// the browser gives up — and stay under Vercel's 60s function limit.
+const TIMEOUT_MS = 35000
 
 async function postJSON(url, body) {
   const abort = new AbortController()
