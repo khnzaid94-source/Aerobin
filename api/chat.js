@@ -117,6 +117,9 @@ export default async function handler(request, response) {
       // budget before visible text — 300 left replies cut mid-sentence.
       maxOutputTokens: 2048,
     },
+    // Grounded 1-3 sentence answers don't need reasoning; thinking is the
+    // main source of free-tier latency (5-20s). Off for chat speed.
+    thinkingBudget: 0,
   })
 
   if (!result.ok) {

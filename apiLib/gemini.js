@@ -78,6 +78,12 @@ async function resolveCandidates(apiKey) {
  * waits longer than this budget, so the server always gets to deliver its
  * own verdict (success or honest timeout) before the browser gives up.
  *
+ * `thinkingBudget` (optional): Gemini 2.5+/3.x "think" by default, which
+ * adds 5-20s latency on the free tier. Pass 0 for speed-critical grounded
+ * replies (chat), omit it for analysis where reasoning quality matters
+ * (insights). Only attached when the candidate model actually supports
+ * thinkingConfig, so legacy models never 400.
+ *
  * @returns {Promise<
  *   | { ok: true, text: string, model: string }
  *   | { ok: false, error: string, model: string|null, detail: string }
@@ -86,7 +92,14 @@ async function resolveCandidates(apiKey) {
 const TOTAL_BUDGET_MS = 25000
 const ATTEMPT_TIMEOUT_MS = 20000
 
-export async function generateWithFallback({ apiKey, systemInstruction, contents, generationConfig }) {
+function supportsThinking(model) {
+  // 2.5-flash and the 3.x family accept thinkingConfig; 'latest' aliases
+  // track the 3.x line. 1.5/2.0-era models don't know the field and would
+  // reject the request, so we omit it there.
+  return /gemini-(2\.5|3\.)/.test(model) || model.includes('flash-latest')
+}
+
+export async function generateWithFallback({ apiKey, systemInstruction, contents, generationConfig, thinkingBudget }) {
   const candidates = await resolveCandidates(apiKey)
   const deadline = Date.now() + TOTAL_BUDGET_MS
   let lastModel = null
@@ -95,6 +108,10 @@ export async function generateWithFallback({ apiKey, systemInstruction, contents
   const attempt = async (model) => {
     const remaining = deadline - Date.now()
     if (remaining < 1000) return { status: 'deadline' }
+    const config =
+      thinkingBudget != null && supportsThinking(model)
+        ? { ...generationConfig, thinkingConfig: { thinkingBudget } }
+        : generationConfig
     const res = await fetch(`${GEMINI_BASE}/models/${model}:generateContent`, {
       method: 'POST',
       headers: {
@@ -104,7 +121,7 @@ export async function generateWithFallback({ apiKey, systemInstruction, contents
       body: JSON.stringify({
         systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined,
         contents,
-        generationConfig,
+        generationConfig: config,
       }),
       signal: AbortSignal.timeout(Math.min(ATTEMPT_TIMEOUT_MS, remaining)),
     })
