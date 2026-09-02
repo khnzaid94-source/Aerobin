@@ -33,14 +33,21 @@ async function resolveModel(apiKey) {
           .map((m) => (m.name ?? '').replace('models/', ''))
           .filter((n) => n && !n.includes('embedding') && !n.includes('tts') && !n.includes('image'))
       )
+      lastModelList = [...names]
       resolvedModel = MODEL_PREFERENCE.find((m) => names.has(m)) ?? [...names].find((n) => n.includes('flash')) ?? null
+    } else {
+      lastModelList = [`listmodels-${res.status}`]
     }
-  } catch {
-    // fall through to static preference
+  } catch (err) {
+    lastModelList = [`listmodels-${err?.name === 'AbortError' ? 'timeout' : 'error'}`]
   }
   if (!resolvedModel) resolvedModel = MODEL_PREFERENCE[0]
   return resolvedModel
 }
+
+// Diagnostics only — populated by resolveModel, returned in error responses
+// so a misconfigured key is debuggable from the client without server access.
+let lastModelList = null
 
 const LANG_NAME = { en: 'English', mr: 'Marathi (Devanagari script)', hi: 'Hindi (Devanagari script)' }
 
@@ -161,7 +168,13 @@ export default async function handler(request, response) {
     })
 
     if (!res.ok) {
-      response.status(200).json({ available: false, reason: `gemini-${res.status}-${model}` })
+      const body = await res.text().catch(() => '')
+      response.status(200).json({
+        available: false,
+        reason: `gemini-${res.status}-${model}`,
+        modelList: lastModelList,
+        errorBody: body.slice(0, 300),
+      })
       return
     }
 
