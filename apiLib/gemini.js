@@ -103,14 +103,44 @@ export async function generateWithFallback({ apiKey, systemInstruction, contents
         const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
         if (text) return { ok: true, text: text.trim(), model }
         lastDetail = 'empty-response'
-      } else {
-        const body = await res.text().catch(() => '')
-        lastDetail = `gemini-${res.status}: ${body.slice(0, 200)}`
-        // Only a 404 suggests "model retired/renamed — try the next
-        // candidate". Other statuses (400 bad request, 429 quota…) would
-        // fail identically on every model, so stop early.
-        if (res.status !== 404) break
+        break // an ok response with no text is not a model-name problem
       }
+      const body = await res.text().catch(() => '')
+      lastDetail = `gemini-${res.status}: ${body.slice(0, 200)}`
+      if (res.status === 404) {
+        // Model retired/renamed for this key — try the next candidate.
+        continue
+      }
+      if (res.status === 429 || res.status === 503) {
+        // Transient overload/quota on the free tier — one retry with
+        // backoff on the same model before falling through.
+        await new Promise((resolve) => setTimeout(resolve, 1200))
+        const retry = await fetch(`${GEMINI_BASE}/models/${model}:generateContent`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey,
+          },
+          body: JSON.stringify({
+            systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined,
+            contents,
+            generationConfig,
+          }),
+          signal: AbortSignal.timeout(20000),
+        })
+        if (retry.ok) {
+          const json = await retry.json()
+          const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
+          if (text) return { ok: true, text: text.trim(), model }
+          lastDetail = 'empty-response'
+          break
+        }
+        const retryBody = await retry.text().catch(() => '')
+        lastDetail = `gemini-${retry.status}: ${retryBody.slice(0, 200)}`
+        if (retry.status === 503 || retry.status === 429) continue // try next candidate model
+        break
+      }
+      break // other statuses would fail identically on every model
     } catch (err) {
       lastDetail = err?.name === 'TimeoutError' || err?.name === 'AbortError' ? 'timeout' : 'fetch-failed'
       break // network-level failure: retrying other models won't help
