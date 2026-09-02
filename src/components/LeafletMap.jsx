@@ -100,7 +100,7 @@ export function LeafletMap({
             icon={wardIcon(ward.band, ward.id === selectedWardId)}
             eventHandlers={{ click: () => onSelectWard?.(ward.id) }}
           >
-            {renderPopup && <Popup minWidth={220}>{renderPopup(ward)}</Popup>}
+            {renderPopup && <Popup minWidth={260} maxWidth={320}>{renderPopup(ward)}</Popup>}
             {renderTooltip && (
               <Tooltip direction="top" offset={[0, -14]} opacity={1}>
                 {renderTooltip(ward)}

@@ -226,7 +226,7 @@ export function CitizenAlert() {
         </div>
       </div>
       {showCompare && <WardCompare wards={wardsWithBand} weather={weather} />}
-      <div className="relative flex-1">
+      <div className="relative min-h-0 flex-1">
         <LeafletMap
           wards={wardsWithBand}
           selectedWardId={selectedWardId}
@@ -236,45 +236,46 @@ export function CitizenAlert() {
           renderPopup={isMobile ? undefined : (ward) => <WardDetails ward={ward} reading={weather.readings[ward.id]} fires={fires} />}
           className="h-full w-full"
         />
+      </div>
 
-        {/* Bottom banner */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[600] flex justify-center px-3 pb-3">
-          <div className="pointer-events-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-navy px-4 py-3 shadow-2xl">
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-wide" style={{ color: COLORS.muted }}>
-                Today
-              </p>
-              <p className="font-display text-base leading-tight sm:text-lg" style={{ color: '#FFFFFF' }}>
-                {allClear ? (
-                  <span style={{ color: COLORS.teal }}>All wards below alert level</span>
-                ) : (
-                  <>
-                    High-risk wards: <span style={{ color: COLORS.red }}>{highRiskWards.length}</span> of{' '}
-                    {wardsWithBand.length}
-                  </>
-                )}
-              </p>
-              {allClear && (
-                <Link to="/analyst" className="mt-1 inline-block text-[11px] font-semibold underline" style={{ color: COLORS.teal }}>
-                  See last High week (Week 6) in Analyst →
-                </Link>
+      {/* Today banner — in page flow BELOW the map (not an overlay), so it
+          can never cover ward markers or clip Leaflet popups near the bottom. */}
+      <div className="bg-white px-3 pb-3 pt-2">
+        <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-navy px-4 py-3 shadow-lg">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wide" style={{ color: COLORS.muted }}>
+              Today
+            </p>
+            <p className="font-display text-base leading-tight sm:text-lg" style={{ color: '#FFFFFF' }}>
+              {allClear ? (
+                <span style={{ color: COLORS.teal }}>All wards below alert level</span>
+              ) : (
+                <>
+                  High-risk wards: <span style={{ color: COLORS.red }}>{highRiskWards.length}</span> of{' '}
+                  {wardsWithBand.length}
+                </>
               )}
-              <p className="text-[11px]" style={{ color: COLORS.muted }}>
-                {weather.isFetching
-                  ? 'Refreshing…'
-                  : weather.offline
-                    ? 'Offline mode · showing pilot baseline'
-                    : 'Live PM2.5 connected'}
-              </p>
-            </div>
-            <button
-              onClick={weather.refresh}
-              disabled={weather.isFetching}
-              className="shrink-0 rounded-full bg-teal px-4 py-2 text-sm font-semibold text-navy transition hover:brightness-95 disabled:opacity-50"
-            >
-              {weather.isFetching ? '…' : 'Refresh'}
-            </button>
+            </p>
+            {allClear && (
+              <Link to="/analyst" className="mt-1 inline-block text-[11px] font-semibold underline" style={{ color: COLORS.teal }}>
+                See last High week (Week 6) in Analyst →
+              </Link>
+            )}
+            <p className="text-[11px]" style={{ color: COLORS.muted }}>
+              {weather.isFetching
+                ? 'Refreshing…'
+                : weather.offline
+                  ? 'Offline mode · showing pilot baseline'
+                  : 'Live PM2.5 connected'}
+            </p>
           </div>
+          <button
+            onClick={weather.refresh}
+            disabled={weather.isFetching}
+            className="shrink-0 rounded-full bg-teal px-4 py-2 text-sm font-semibold text-navy transition hover:brightness-95 disabled:opacity-50"
+          >
+            {weather.isFetching ? '…' : 'Refresh'}
+          </button>
         </div>
       </div>
 

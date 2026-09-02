@@ -336,12 +336,12 @@ body,
   }
 }
 
-/* Floating "Ask AeroBin" button (Citizen) — sits above the Today banner
-   so it stays reachable; z-index under the mobile bottom sheet. */
+/* Floating "Ask AeroBin" button (Citizen) — banner is in page flow below
+   the map now, so this only needs to clear the banner strip (~88px). */
 .ab-chat-fab {
   position: fixed;
   right: 16px;
-  bottom: 96px;
+  bottom: 108px;
   z-index: 650;
   display: flex;
   align-items: center;
@@ -360,7 +360,7 @@ body,
 .ab-chat-panel {
   position: fixed;
   right: 16px;
-  bottom: 156px;
+  bottom: 168px;
   z-index: 650;
   display: flex;
   flex-direction: column;
@@ -395,6 +395,10 @@ body,
   }
   .ab-chat-panel[data-open="true"] {
     transform: translateY(0);
+  }
+  /* Mobile: FAB sits above the in-flow banner, clear of the map */
+  .ab-chat-fab {
+    bottom: 150px;
   }
 }
 
