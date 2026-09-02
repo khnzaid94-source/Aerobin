@@ -5,6 +5,10 @@ import { useWardGeoJSON } from '../lib/useWardGeoJSON'
 import { RISK_BANDS, COLORS } from '../lib/theme'
 
 const PUNE_CENTER = [18.53, 73.86]
+// Default view sits one level wider than "just fits" — popups near the
+// bottom-most markers then have room to open without auto-panning the
+// feedback row off-screen, and the view is stable on first load.
+const INITIAL_ZOOM = 11
 
 function FitToWards({ wards }) {
   const map = useMap()
@@ -14,8 +18,12 @@ function FitToWards({ wards }) {
       map.setView(wards[0].coordinates, 13)
       return
     }
-    const bounds = L.latLngBounds(wards.map((w) => w.coordinates))
-    map.fitBounds(bounds, { padding: [48, 48] })
+    // paddingBottomRight reserves room for popups below the bottom-most
+    // marker; padding top/left keeps the cluster centered visually.
+    map.fitBounds(L.latLngBounds(wards.map((w) => w.coordinates)), {
+      paddingTopLeft: [48, 48],
+      paddingBottomRight: [48, 220],
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wards.map((w) => w.id).join(',')])
   return null
@@ -77,7 +85,7 @@ export function LeafletMap({
     <div className={`relative ${className}`}>
       <MapContainer
         center={PUNE_CENTER}
-        zoom={12}
+        zoom={INITIAL_ZOOM}
         zoomControl={false}
         scrollWheelZoom={scrollWheelZoom}
         className="h-full w-full"
@@ -87,7 +95,9 @@ export function LeafletMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <ZoomControl position="bottomright" />
+        {/* bottomright would sit under the Ask AeroBin chat bubble on
+            Citizen — topleft is clear on every app that renders this map. */}
+        <ZoomControl position="topleft" />
 
         {geo.status === 'ready' && (
           <GeoJSON data={geo.data} style={boundaryStyle} interactive={false} />
