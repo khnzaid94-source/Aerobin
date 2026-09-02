@@ -113,13 +113,12 @@ export default async function handler(request, response) {
     contents,
     generationConfig: {
       temperature: 0.5,
-      // Gemini 3.x models spend internal "thinking" tokens against this
-      // budget before visible text — 300 left replies cut mid-sentence.
       maxOutputTokens: 2048,
     },
-    // Grounded 1-3 sentence answers don't need reasoning; thinking is the
-    // main source of free-tier latency (5-20s). Off for chat speed.
-    thinkingBudget: 0,
+    // Speed-grade chain (flash-lite): full-size 3.x models spend 5-25s
+    // "thinking" on a 2-sentence grounded reply and reject every
+    // thinkingConfig override — lite models answer in ~2s.
+    lite: true,
   })
 
   if (!result.ok) {

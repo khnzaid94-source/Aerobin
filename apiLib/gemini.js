@@ -13,6 +13,7 @@
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 
+// Analysis-grade preference (insights): full thinking, best quality.
 const MODEL_PREFERENCE = [
   'gemini-flash-latest', // Google's self-updating GA flash alias
   'gemini-3.7-flash',
@@ -21,7 +22,19 @@ const MODEL_PREFERENCE = [
   'gemini-2.5-flash', // legacy keys
 ]
 
-let cachedCandidates = null
+// Speed-grade preference (chat): lite models answer grounded 1-3 sentence
+// replies in ~2s. Full-size 3.x models spend 5-25s thinking by default and
+// REJECT thinkingConfig overrides (thinkingBudget/thinkingLevel both 400),
+// so the only reliable latency fix is choosing a lite model.
+const MODEL_PREFERENCE_LITE = [
+  'gemini-3.5-flash-lite',
+  'gemini-flash-lite-latest',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-flash-lite',
+  'gemini-flash-latest',
+]
+
+let candidateCache = new Map() // 'full' | 'lite' -> ordered candidate list
 
 function interestingModels(models) {
   return (models ?? [])
@@ -44,8 +57,10 @@ function interestingModels(models) {
     )
 }
 
-async function resolveCandidates(apiKey) {
-  if (cachedCandidates) return cachedCandidates
+async function resolveCandidates(apiKey, { lite = false } = {}) {
+  const preference = lite ? MODEL_PREFERENCE_LITE : MODEL_PREFERENCE
+  const cacheKey = lite ? 'lite' : 'full'
+  if (candidateCache.has(cacheKey)) return candidateCache.get(cacheKey)
   let listed = []
   try {
     const res = await fetch(`${GEMINI_BASE}/models`, {
@@ -61,13 +76,15 @@ async function resolveCandidates(apiKey) {
   }
   const known = new Set(listed)
   // Preference order first (skipping any the account can't see), then any
-  // other flash model the account lists as a last resort.
+  // other model of the same tier the account lists as a last resort.
+  const suffix = lite ? 'flash-lite' : 'flash'
   const ordered = [
-    ...MODEL_PREFERENCE.filter((m) => listed.length === 0 || known.has(m)),
-    ...listed.filter((m) => !MODEL_PREFERENCE.includes(m) && m.includes('flash')),
+    ...preference.filter((m) => listed.length === 0 || known.has(m)),
+    ...listed.filter((m) => !preference.includes(m) && m.includes(suffix)),
   ]
-  cachedCandidates = ordered.length > 0 ? ordered : MODEL_PREFERENCE
-  return cachedCandidates
+  const result = ordered.length > 0 ? ordered : preference
+  candidateCache.set(cacheKey, result)
+  return result
 }
 
 /**
@@ -78,11 +95,11 @@ async function resolveCandidates(apiKey) {
  * waits longer than this budget, so the server always gets to deliver its
  * own verdict (success or honest timeout) before the browser gives up.
  *
- * `thinkingBudget` (optional): Gemini 2.5+/3.x "think" by default, which
- * adds 5-20s latency on the free tier. Pass 0 for speed-critical grounded
- * replies (chat), omit it for analysis where reasoning quality matters
- * (insights). Only attached when the candidate model actually supports
- * thinkingConfig, so legacy models never 400.
+ * `lite: true` selects the speed-grade model chain (flash-lite) for
+ * grounded chat replies. NOTE: we deliberately do NOT send thinkingConfig
+ * — the 3.x generation rejects every override shape (thinkingBudget and
+ * thinkingLevel both return 400 INVALID_ARGUMENT), so model choice is the
+ * only reliable latency lever on the free tier.
  *
  * @returns {Promise<
  *   | { ok: true, text: string, model: string }
@@ -92,15 +109,8 @@ async function resolveCandidates(apiKey) {
 const TOTAL_BUDGET_MS = 25000
 const ATTEMPT_TIMEOUT_MS = 20000
 
-function supportsThinking(model) {
-  // 2.5-flash and the 3.x family accept thinkingConfig; 'latest' aliases
-  // track the 3.x line. 1.5/2.0-era models don't know the field and would
-  // reject the request, so we omit it there.
-  return /gemini-(2\.5|3\.)/.test(model) || model.includes('flash-latest')
-}
-
-export async function generateWithFallback({ apiKey, systemInstruction, contents, generationConfig, thinkingBudget }) {
-  const candidates = await resolveCandidates(apiKey)
+export async function generateWithFallback({ apiKey, systemInstruction, contents, generationConfig, lite = false }) {
+  const candidates = await resolveCandidates(apiKey, { lite })
   const deadline = Date.now() + TOTAL_BUDGET_MS
   let lastModel = null
   let lastDetail = ''
@@ -108,10 +118,6 @@ export async function generateWithFallback({ apiKey, systemInstruction, contents
   const attempt = async (model) => {
     const remaining = deadline - Date.now()
     if (remaining < 1000) return { status: 'deadline' }
-    const config =
-      thinkingBudget != null && supportsThinking(model)
-        ? { ...generationConfig, thinkingConfig: { thinkingBudget } }
-        : generationConfig
     const res = await fetch(`${GEMINI_BASE}/models/${model}:generateContent`, {
       method: 'POST',
       headers: {
@@ -121,7 +127,7 @@ export async function generateWithFallback({ apiKey, systemInstruction, contents
       body: JSON.stringify({
         systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined,
         contents,
-        generationConfig: config,
+        generationConfig,
       }),
       signal: AbortSignal.timeout(Math.min(ATTEMPT_TIMEOUT_MS, remaining)),
     })
