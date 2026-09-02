@@ -113,7 +113,9 @@ export default async function handler(request, response) {
     contents,
     generationConfig: {
       temperature: 0.5,
-      maxOutputTokens: 300,
+      // Gemini 3.x models spend internal "thinking" tokens against this
+      // budget before visible text — 300 left replies cut mid-sentence.
+      maxOutputTokens: 2048,
     },
   })
 
