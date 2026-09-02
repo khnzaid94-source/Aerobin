@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, Check } from 'lucide-react'
+import { Download, Check, Sparkles, RefreshCw } from 'lucide-react'
 import { Card, StatusPill, StatusSpine } from '../components/Card'
 import { Sparkline } from '../components/Sparkline'
 import { PilotPlayback } from '../components/PilotPlayback'
@@ -7,6 +7,8 @@ import { useAerobinData } from '../lib/useAerobinData'
 import { LoadingScreen, ErrorScreen } from '../components/StateScreen'
 import { metricStatus, metricProgressLabel } from '../lib/esgStatus'
 import { downloadReportJSON, downloadReportCSV } from '../lib/exportReport'
+import { fetchAIInsights } from '../lib/aiClient'
+import { useI18n } from '../lib/i18n'
 
 function MetricCard({ metric, activeIndex }) {
   const status = metricStatus(metric)
@@ -240,6 +242,115 @@ function DiagnosticsSection({ diagnostics }) {
   )
 }
 
+function AiDiagnostics({ esgMetrics, summary, replication }) {
+  const { t } = useI18n()
+  // idle | generating | ready | unavailable | error
+  const [state, setState] = useState('idle')
+  const [insights, setInsights] = useState([])
+
+  const generate = async () => {
+    setState('generating')
+    const result = await fetchAIInsights({ esg: esgMetrics, summary, replication })
+    if (result.status === 'ok') {
+      setInsights(result.insights)
+      setState('ready')
+    } else if (result.reason === 'no-api-key') {
+      setState('unavailable')
+    } else {
+      setState('error')
+    }
+  }
+
+  return (
+    <Card>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 font-display text-xl text-navy">
+            <Sparkles size={18} aria-hidden />
+            {t('aiTitle')}
+          </h2>
+          <p className="mt-1 max-w-xl text-xs text-slate-soft">{t('aiSubtitle')}</p>
+        </div>
+        {state !== 'unavailable' && (
+          <button
+            onClick={generate}
+            disabled={state === 'generating'}
+            className="flex shrink-0 items-center gap-2 rounded-full bg-navy px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy/90 disabled:opacity-60"
+          >
+            {state === 'generating' ? (
+              <RefreshCw size={16} className="ab-spin" aria-hidden />
+            ) : (
+              <Sparkles size={16} aria-hidden />
+            )}
+            {state === 'generating'
+              ? t('aiGenerating')
+              : state === 'ready'
+                ? t('aiRegenerate')
+                : t('aiGenerate')}
+          </button>
+        )}
+      </div>
+
+      {state === 'generating' && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="ab-card p-3.5" aria-hidden>
+              <div className="ab-shimmer h-3 w-1/3 rounded" />
+              <div className="ab-shimmer mt-2.5 h-4 w-2/3 rounded" />
+              <div className="ab-shimmer mt-2 h-3 w-full rounded" />
+              <div className="ab-shimmer mt-1.5 h-3 w-5/6 rounded" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {state === 'unavailable' && (
+        <p className="rounded-xl bg-mist px-4 py-3 text-sm text-slate">{t('aiUnavailable')}</p>
+      )}
+
+      {state === 'error' && (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-slate">{t('aiRetry')}</p>
+          <button
+            onClick={generate}
+            className="rounded-full border border-navy-line bg-white px-3 py-1.5 text-xs font-semibold text-navy"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {state === 'ready' && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {insights.map((ins, i) => (
+              <StatusSpine key={i} status={ins.color} className="ab-card">
+                <div className="p-3.5">
+                  <div className="mb-1 flex items-start justify-between gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-soft">
+                      {ins.pillar}
+                    </span>
+                    <StatusPill status={ins.color} label={ins.type} />
+                  </div>
+                  <p className="font-display text-base leading-snug text-navy">{ins.title}</p>
+                  <p className="mt-1 text-sm text-slate">{ins.message}</p>
+                  <p className="mt-2 text-xs font-medium text-navy/70">
+                    <span className="font-semibold">Next: </span>
+                    {ins.action}
+                  </p>
+                </div>
+              </StatusSpine>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] font-semibold text-slate-soft">
+            ● {t('aiTag')} · {t('aiSubtitle')}
+          </p>
+        </>
+      )}
+    </Card>
+  )
+}
+
 function DownloadReportButton({ data }) {
   const [downloaded, setDownloaded] = useState(null)
 
@@ -324,6 +435,7 @@ export function ImpactAnalyst() {
 
           <PhaseSection phases={data.phases} />
           <ReplicationSection replication={data.replication} />
+          <AiDiagnostics esgMetrics={data.esgMetrics} summary={data.summary} replication={data.replication} />
           <DiagnosticsSection diagnostics={data.diagnostics} />
         </div>
 

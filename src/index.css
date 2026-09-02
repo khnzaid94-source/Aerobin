@@ -300,3 +300,141 @@ body,
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.45);
 }
+
+/* ---------------------------------------------------------------
+   AI features (v2.0): chat widget + loading shimmer
+--------------------------------------------------------------- */
+
+/* Loading shimmer for AI-generated insight cards (Analyst) */
+.ab-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(10, 12, 15, 0.05) 25%,
+    rgba(10, 12, 15, 0.1) 45%,
+    rgba(10, 12, 15, 0.05) 65%
+  );
+  background-size: 200% 100%;
+  animation: ab-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes ab-shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -20% 0; }
+}
+
+/* Spinner used inside the "Generating AI insights" button */
+.ab-spin {
+  animation: ab-spin 0.9s linear infinite;
+}
+@keyframes ab-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ab-shimmer,
+  .ab-spin {
+    animation: none !important;
+  }
+}
+
+/* Floating "Ask AeroBin" button (Citizen) — sits above the Today banner
+   so it stays reachable; z-index under the mobile bottom sheet. */
+.ab-chat-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 96px;
+  z-index: 650;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(10, 12, 15, 0.3);
+  transition: transform 0.15s ease;
+}
+.ab-chat-fab:hover {
+  transform: scale(1.06);
+}
+
+/* Chat panel — floating card on desktop, full-width sheet on mobile */
+.ab-chat-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 156px;
+  z-index: 650;
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  height: 420px;
+  max-height: calc(100dvh - 240px);
+  border-radius: 16px;
+  background: var(--color-white);
+  box-shadow: 0 16px 48px rgba(10, 12, 15, 0.35);
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.ab-chat-panel[data-open="true"] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+@media (max-width: 639px) {
+  .ab-chat-panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 72dvh;
+    max-height: none;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+  }
+  .ab-chat-panel[data-open="true"] {
+    transform: translateY(0);
+  }
+}
+
+/* Message bubbles */
+.ab-chat-msg {
+  max-width: 85%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  word-wrap: break-word;
+}
+.ab-chat-msg--user {
+  margin-left: auto;
+  background: var(--color-navy);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+.ab-chat-msg--bot {
+  margin-right: auto;
+  background: var(--color-mist);
+  color: var(--color-navy);
+  border-bottom-left-radius: 4px;
+}
+.ab-chat-typing {
+  opacity: 0.7;
+}
+
+.ab-chat-scroll {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ab-chat-panel {
+    transition: none;
+  }
+  .ab-chat-fab:hover {
+    transform: none;
+  }
+}

@@ -45,6 +45,8 @@ Open burning of mixed waste spikes PM2.5 with no warning and no accountability t
 *   **Live PM2.5** (`src/lib/useWeather.js:1-114`) — OpenWeatherMap Air Pollution API per ward, module `Map` cache across tab navigation; fallback to `E1_pm25.current` with amber “Last known reading” via `src/components/LiveReading.jsx:15-43` (no silent fake live).
 *   **Dispatch Queue + Audit Log** (`src/pages/DispatchConsole.jsx:1-260`) — sorted High-risk desc, map↔queue selection sync (`LeafletMap.jsx:50-104` `selectedWardId/onSelectWard`), hover tooltip with top feature + dispatch status, audit seeded from real `dispatchStatus` and persisted.
 *   **Mobile Citizen** — below 640px floating `Popup` → `BottomSheet.jsx:11-27` sheet with backdrop + dialog a11y (`src/pages/CitizenAlert.jsx:42-126`).
+*   **AI Insights** (`src/pages/ImpactAnalyst.jsx` + `api/insights.js`) — one tap generates 3–5 grounded diagnostic cards from the 9 ESG metrics via Gemini. Every output is tagged "AI-generated · verify against data"; no key configured ⇒ honest notice, not a fake.
+*   **Ask AeroBin assistant** (`src/components/CitizenChatbot.jsx` + `api/chat.js`) — grounded chat on `/citizen`: answers only from today's ward scores/bands/PM2.5, in EN/MR/HI following the language selector. Same honest-availability contract.
 
 See `docs/CONTRAST_FIX.md` and `docs/DATA_MODEL.md` for the deep dives that used to live here.
 
@@ -53,6 +55,8 @@ See `docs/CONTRAST_FIX.md` and `docs/DATA_MODEL.md` for the deep dives that used
 ## Tech Stack
 
 React 19 + Vite 8 + `react-router-dom:7.18.1` (lazy chunks per app `src/App.jsx:12`), Leaflet `1.9.4` + `react-leaflet:5.0.0`, Recharts `3.10.0`, Tailwind v4 `@theme` `src/index.css:9-42` + `src/lib/theme.js:6-26` as single truth, `lucide-react` icons. Lint: `oxlint` `^1.71.0` (`npm run lint`).
+
+**AI (v2.0):** Gemini Flash via Vercel serverless functions in `api/` (keys stay server-side) — AI Insights for the Analyst (`api/insights.js`) and a grounded multilingual citizen assistant (`api/chat.js`). Without `GEMINI_API_KEY` both features show an honest "not configured" notice and every v1.0 feature keeps working.
 
 ---
 
@@ -83,7 +87,8 @@ Free Hobby tier, zero config — the repo already includes `vercel.json` (SPA re
 
 1. vercel.com → Add New → Project → Import this repo → Vite preset auto-detected
 2. Environment Variables → `VITE_OPENWEATHER_API_KEY` = your key (Production + Preview)
-3. Deploy → every future `git push` to `main` auto-redeploys
+3. Environment Variables → `GEMINI_API_KEY` = your Gemini key from https://aistudio.google.com/apikey (Production + Preview) — enables AI Insights + the citizen assistant; server-side only, never exposed to the client bundle
+4. Deploy → every future `git push` to `main` auto-redeploys
 
 Requires Node `>=18` (`package.json:6` `engines`, `.nvmrc:1` `20`). See `jsconfig.json` for `checkJs` IDE hints (Option A — no TS migration).
 
@@ -107,12 +112,14 @@ Week 12 (Dec 23) has all wards Low (<40) — `summary.highRiskWardsToday:0` in `
 ```
 src/
   components/ TopNav.jsx, Card.jsx, LeafletMap.jsx, Sparkline.jsx, PilotPlayback.jsx,
-              LiveReading.jsx, BottomSheet.jsx, CardAccentArt.jsx, StateScreen.jsx, ErrorBoundary.jsx
+              LiveReading.jsx, BottomSheet.jsx, CardAccentArt.jsx, StateScreen.jsx,
+              ErrorBoundary.jsx, CitizenChatbot.jsx
   lib/        useAerobinData.js, useWardGeoJSON.js, useWeather.js, useIsMobile.js,
               DemoContext.js/DemoProvider.jsx/useDemoMode.js, demoOverrides.js,
               theme.js, esgStatus.js, auditLog.js, exportReport.js, format.js,
-              i18n.jsx, registerSW.js
+              i18n.jsx, aiClient.js, registerSW.js
   pages/      AppMenu.jsx, CitizenAlert.jsx, DispatchConsole.jsx, ImpactAnalyst.jsx
+api/          insights.js (AI Insights), chat.js (citizen assistant) — Vercel serverless
 public/       leaf.svg, manifest.json, sw.js, data/ aerobin_data.json, pune-admin-wards.geojson
 Project Submissions/  1A–4B docs, Prototype Video.mkv (65 MB, direct push), Portfolio pptx
 docs/         CONTRAST_FIX.md, DATA_MODEL.md, ROADMAP.md

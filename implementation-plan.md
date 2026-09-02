@@ -1,6 +1,6 @@
 # Aerobin Microapps — Implementation Plan
 
-**Status:** ✅ COMPLETE — v1.0.0 shipped & deployed  
+**Status:** v1.0 shipped & deployed · **v2.0 AI enablement in progress**  
 **Live demo:** https://aerobin.vercel.app (auto-CD from `main`)  
 **Source:** https://github.com/khnzaid94-source/Aerobin (public)
 
@@ -136,3 +136,65 @@
 - OpenWeather key is public-in-bundle by design (Option B); if quota is ever abused, generate a fresh key in Vercel → Settings → Environment Variables → redeploy
 - Screenshots predate the ink palette + motion pass — re-capture from https://aerobin.vercel.app anytime and replace `SS/*.png` (README needs no edits, filenames unchanged)
 - `sw.js` is now maintenance-free (network-first); no version bumps required on future deploys
+
+---
+
+# v2.0 — AI Enablement (2026-09 →)
+
+**Why:** v1.0 was a pure visualization suite — the "AI" existed only in the 3B AI Workflow design doc. v2.0 makes that design *literally true in code*, phase by phase. Every phase ships something demo-able; every AI feature degrades **honestly** (never a silent fake — same ethos as `useWeather`'s `source: 'fallback'`).
+
+**Architecture decision:** Vercel serverless functions in `api/` hold all AI keys server-side (never `VITE_`-prefixed, never in the client bundle). Vercel serves `api/*` before the SPA rewrite, so `vercel.json` needs no change. Client talks to `/api/*`; if no key is configured, endpoints respond `{ available: false }` and the UI shows its existing static content.
+
+| Phase | Feature | Status |
+|-------|---------|--------|
+| 5 | AI Insights (Analyst) + Citizen Chatbot — Gemini via serverless | 🚧 In progress |
+| 6 | FIRMS satellite burn detection + PM2.5 anomaly detection + Supabase persistence | ⏳ Planned |
+| 7 | Real burn-risk classifier (CPCB + Open-Meteo + FIRMS labels → scikit-learn → ONNX) | ⏳ Planned |
+| 8 | Feedback loop → per-ward precision stats (makes S3 equity gap real) | ⏳ Planned |
+
+---
+
+## Phase 5 — AI Insights + Multilingual Citizen Chatbot 🚧
+
+### A. Serverless layer (new)
+1. **`api/insights.js`** — POST; takes ESG metric summaries, asks Gemini Flash for 3–5 diagnostic insights (JSON array: `{pillar, type, color, title, message, action}`); system prompt enforces grounding in provided numbers only, no invented metrics. No key → `{ available: false }`.
+2. **`api/chat.js`** — POST `{ messages, lang }`; injects the ward dataset (scores, bands, features, dump-slot info, live PM2.5 context) as grounding context; instructs the model to answer only about the 5 pilot wards, admit unknowns, reply in EN/MR/HI. No key → `{ available: false }`.
+3. Both: 15s timeout, `GEMINI_API_KEY` from server env only, no CORS middleware needed (same-origin), Vercel Hobby-compatible.
+
+### B. Frontend (new)
+4. **`src/lib/aiClient.js`** — `fetchAIInsights(payload)` / `sendChatMessage(messages, lang)` with 15s `AbortController`; every failure path resolves to a typed "unavailable" result, never a thrown error reaching the UI.
+5. **AI Insights section in `ImpactAnalyst.jsx`** — new `AiDiagnostics` card between Replication and Diagnostics: "AI Insights (Gemini)" header with a Generate button; loading shimmer; results as `StatusSpine` cards (reusing `d.color` bands); explicit "AI-generated · verify against data" footnote; button hidden/disabled when endpoint reports unavailable, with a one-line explanation instead of an error.
+6. **Citizen Chatbot** — floating action button (bottom-right, above the Today banner) on `/citizen`; opens a chat panel (desktop: floating card; mobile: full-width sheet reusing the BottomSheet pattern). Message list, input, send; quick-prompt chips ("Is my ward at risk?", "Where do I dump waste?"); replies render in the app language (`useI18n().lang` → passed to `/api/chat`); unavailable → a small honest notice in the panel, not a broken widget.
+7. **i18n** — new keys in `src/lib/i18n.jsx` for all chat/insights strings (EN/MR/HI).
+8. **Honesty contract** — UI never fakes AI availability: no key ⇒ widgets show "AI assistant not configured" one-liner; timeout/failure ⇒ retry affordance; every AI output carries a visible "AI-generated" tag.
+
+### C. Config & docs
+9. `.env.example` — add `GEMINI_API_KEY` (server-side only) note.
+10. `README.md` — AI features section, new env var in Deployment, `api/` in structure.
+
+### Verification
+- [ ] `oxlint` 0 errors, `vite build` 0 errors
+- [ ] Without `GEMINI_API_KEY`: Insights shows unavailable notice, chat shows notice, all v1.0 flows untouched
+- [ ] With key: Insights generates ≤5 grounded cards; chat answers ward questions in EN + MR/HI, refuses out-of-scope questions politely
+- [ ] Demo Mode ON: AI context reflects overridden values (Wagholi High etc.)
+- [ ] Mobile 375px: chat panel full-width, keyboard-safe
+
+---
+
+## Phase 6 — Real-Time Intelligence + Persistence ⏳
+
+- **FIRMS satellite hotspots:** `api/fires.js` — NASA FIRMS MAP key (free, ~24h approval), Pune bounding box, active fire pixels mapped to wards via `pune-admin-wards.geojson` point-in-polygon; "satellite-detected burning activity" badge on the citizen map.
+- **PM2.5 anomaly detection:** client-side rolling z-score over `useWeather` readings; flags "unusual spike vs recent readings" alongside OWM's own AQI bands; pure frontend, no key.
+- **Supabase (free):** `feedback` + `dispatch_log` tables replace `localStorage`-only persistence (cross-device audit trail, real feedback corpus).
+
+## Phase 7 — Real Burn-Risk Classifier ⏳
+
+- **Dataset:** CPCB daily AQI (2022–24) + Open-Meteo historical weather per ward + FIRMS hotspot-in-polygon labels (real ground truth, free public data — solves the "simulated data can't train a model" blocker).
+- **Model:** scikit-learn Logistic Regression + Gradient Boosting (exactly the 3B AI Workflow design); features = AQI 7-day trend, humidity, green cover, festival calendar flags; calibrated probabilities → real confidence.
+- **Deployment:** ONNX export → `onnxruntime-web` client-side, or `api/predict.js` pre-compute.
+- **UI:** replaces static `burnRiskScore` + fake `confidenceFor()` heuristic (`CitizenAlert.jsx`) with genuine model output; `/model` model-card page (training data, features, accuracy, limitations) — flagship interview artifact.
+
+## Phase 8 — Feedback → Learning Loop ⏳
+
+- Supabase feedback rows + dispatch outcomes become "was the model right" labels.
+- Per-ward precision stat computed live → S3 "Model Accuracy Equity Gap" becomes measured, not narrated.

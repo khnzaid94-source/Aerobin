@@ -3,9 +3,11 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAerobinData } from '../lib/useAerobinData'
 import { useWeather } from '../lib/useWeather'
 import { useIsMobile } from '../lib/useIsMobile'
+import { useDemoMode } from '../lib/useDemoMode'
 import { LeafletMap } from '../components/LeafletMap'
 import { LiveReading } from '../components/LiveReading'
 import { BottomSheet } from '../components/BottomSheet'
+import { CitizenChatbot } from '../components/CitizenChatbot'
 import { LoadingScreen, ErrorScreen } from '../components/StateScreen'
 import { riskMeta, COLORS } from '../lib/theme'
 import { formatScore } from '../lib/format'
@@ -139,6 +141,7 @@ function WardCompare({ wards, weather }) {
 
 export function CitizenAlert() {
   const data = useAerobinData()
+  const { demoMode } = useDemoMode()
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedWardId, setSelectedWardId] = useState(() => searchParams.get('ward') ?? null)
   const [showCompare, setShowCompare] = useState(false)
@@ -250,6 +253,13 @@ export function CitizenAlert() {
           )}
         </BottomSheet>
       )}
+
+      <CitizenChatbot
+        wards={wardsWithBand}
+        weather={weather}
+        summary={data.status === 'ready' ? data.summary : null}
+        demoMode={demoMode}
+      />
     </div>
   )
 }
