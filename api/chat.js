@@ -8,46 +8,7 @@
 // key the endpoint reports { available: false } and the widget shows an
 // honest "not configured" notice.
 
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta'
-// Preferred models in order; resolved against the live ListModels endpoint
-// once per lambda instance so a renamed/retired model never breaks chat.
-const MODEL_PREFERENCE = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-flash-latest',
-  'gemini-1.5-flash',
-]
-let resolvedModel = null
-
-async function resolveModel(apiKey) {
-  if (resolvedModel) return resolvedModel
-  try {
-    const res = await fetch(`${GEMINI_BASE}/models`, {
-      headers: { 'x-goog-api-key': apiKey },
-      signal: AbortSignal.timeout(8000),
-    })
-    if (res.ok) {
-      const json = await res.json()
-      const names = new Set(
-        (json?.models ?? [])
-          .map((m) => (m.name ?? '').replace('models/', ''))
-          .filter((n) => n && !n.includes('embedding') && !n.includes('tts') && !n.includes('image'))
-      )
-      lastModelList = [...names]
-      resolvedModel = MODEL_PREFERENCE.find((m) => names.has(m)) ?? [...names].find((n) => n.includes('flash')) ?? null
-    } else {
-      lastModelList = [`listmodels-${res.status}`]
-    }
-  } catch (err) {
-    lastModelList = [`listmodels-${err?.name === 'AbortError' ? 'timeout' : 'error'}`]
-  }
-  if (!resolvedModel) resolvedModel = MODEL_PREFERENCE[0]
-  return resolvedModel
-}
-
-// Diagnostics only — populated by resolveModel, returned in error responses
-// so a misconfigured key is debuggable from the client without server access.
-let lastModelList = null
+import { generateWithFallback } from '../apiLib/gemini.js'
 
 const LANG_NAME = { en: 'English', mr: 'Marathi (Devanagari script)', hi: 'Hindi (Devanagari script)' }
 
@@ -128,68 +89,37 @@ export default async function handler(request, response) {
     // Gemini expects the conversation to open with a user turn — drop any
     // leading assistant greeting the client may include.
     .filter((c, i) => !(c.role === 'model' && i === 0) && c.parts[0].text.trim() !== '')
+
   // Grounding context rides along on every request so it can never be
   // prompt-injected away from the conversation history. It is prepended
   // INTO the first user turn (not as a separate message) so the
   // user/model roles keep alternating cleanly.
-  const firstUserIdx = contents.findIndex((c) => c.role === 'user')
   const groundingPrefix =
     `TODAY'S PILOT CONTEXT (authoritative, JSON):\n${JSON.stringify(wardContext)}\n\n` +
     (wardContext.demoMode
       ? "Note: demo mode is ON, so these are demo-forced values — still answer as if they are today's readings.\n\n"
       : '') +
     'Remember: use only these numbers.\n\n'
+  const firstUserIdx = contents.findIndex((c) => c.role === 'user')
   if (firstUserIdx >= 0) {
     contents[firstUserIdx].parts[0].text = groundingPrefix + contents[firstUserIdx].parts[0].text
   } else {
     contents.unshift({ role: 'user', parts: [{ text: groundingPrefix.trim() }] })
   }
 
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 15000)
+  const result = await generateWithFallback({
+    apiKey,
+    systemInstruction: systemPromptFor(lang),
+    contents,
+    generationConfig: {
+      temperature: 0.5,
+      maxOutputTokens: 300,
+    },
+  })
 
-  try {
-    const model = await resolveModel(apiKey)
-    const res = await fetch(`${GEMINI_BASE}/models/${model}:generateContent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPromptFor(lang) }] },
-        contents,
-        generationConfig: {
-          temperature: 0.5,
-          maxOutputTokens: 300,
-        },
-      }),
-      signal: controller.signal,
-    })
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      response.status(200).json({
-        available: false,
-        reason: `gemini-${res.status}-${model}`,
-        modelList: lastModelList,
-        errorBody: body.slice(0, 300),
-      })
-      return
-    }
-
-    const json = await res.json()
-    const reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-    if (!reply) {
-      response.status(200).json({ available: false, reason: 'empty-response' })
-      return
-    }
-
-    response.status(200).json({ available: true, reply })
-  } catch (err) {
-    const reason = err?.name === 'AbortError' ? 'timeout' : 'fetch-failed'
-    response.status(200).json({ available: false, reason })
-  } finally {
-    clearTimeout(timer)
+  if (!result.ok) {
+    response.status(200).json({ available: false, reason: result.error, model: result.model })
+    return
   }
+  response.status(200).json({ available: true, reply: result.text })
 }

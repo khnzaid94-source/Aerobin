@@ -1,5 +1,5 @@
 // AI Insights endpoint (Vercel serverless function).
-// POST { esg: [{key,label,pillar,unit,current,baseline,target,series}], summary, replication }
+// POST { context: { esg: [...], summary, replication } }
 // -> { available, insights: [{pillar,type,color,title,message,action}] }
 //
 // GEMINI_API_KEY lives only in the server environment (never in the client
@@ -7,39 +7,7 @@
 // { available: false } so the UI can honestly say AI is not configured
 // instead of pretending.
 
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta'
-// Preferred models in order; resolved against the live ListModels endpoint
-// once per lambda instance so a renamed/retired model never breaks insights.
-const MODEL_PREFERENCE = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-flash-latest',
-  'gemini-1.5-flash',
-]
-let resolvedModel = null
-
-async function resolveModel(apiKey) {
-  if (resolvedModel) return resolvedModel
-  try {
-    const res = await fetch(`${GEMINI_BASE}/models`, {
-      headers: { 'x-goog-api-key': apiKey },
-      signal: AbortSignal.timeout(8000),
-    })
-    if (res.ok) {
-      const json = await res.json()
-      const names = new Set(
-        (json?.models ?? [])
-          .map((m) => (m.name ?? '').replace('models/', ''))
-          .filter((n) => n && !n.includes('embedding') && !n.includes('tts') && !n.includes('image'))
-      )
-      resolvedModel = MODEL_PREFERENCE.find((m) => names.has(m)) ?? [...names].find((n) => n.includes('flash')) ?? null
-    }
-  } catch {
-    // fall through to static preference
-  }
-  if (!resolvedModel) resolvedModel = MODEL_PREFERENCE[0]
-  return resolvedModel
-}
+import { generateWithFallback } from '../apiLib/gemini.js'
 
 const SYSTEM_PROMPT = `You are the analytical engine of AeroBin, an open waste burning early-warning pilot across 5 wards in Pune, India (Hadapsar, Kharadi, Wagholi, Bhosari, Mundhwa).
 
@@ -102,89 +70,64 @@ export default async function handler(request, response) {
     })),
   }
 
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 15000)
-
-  try {
-    const model = await resolveModel(apiKey)
-    const res = await fetch(`${GEMINI_BASE}/models/${model}:generateContent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
+  const result = await generateWithFallback({
+    apiKey,
+    systemInstruction: SYSTEM_PROMPT,
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: `Pilot context (JSON):\n${JSON.stringify(compact)}` }],
       },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `Pilot context (JSON):\n${JSON.stringify(compact)}` }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.4,
-          responseMimeType: 'application/json',
-        },
-      }),
-      signal: controller.signal,
-    })
+    ],
+    generationConfig: {
+      temperature: 0.4,
+      responseMimeType: 'application/json',
+    },
+  })
 
-    if (!res.ok) {
-      response.status(200).json({ available: false, reason: `gemini-${res.status}-${model}` })
-      return
-    }
-
-    const json = await res.json()
-    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!text) {
-      response.status(200).json({ available: false, reason: 'empty-response' })
-      return
-    }
-
-    let insights
-    try {
-      insights = JSON.parse(text)
-    } catch {
-      response.status(200).json({ available: false, reason: 'unparseable-response' })
-      return
-    }
-
-    if (!Array.isArray(insights)) {
-      response.status(200).json({ available: false, reason: 'unexpected-shape' })
-      return
-    }
-
-    // Sanitize to the exact shape the UI renders; drop anything malformed.
-    const validColors = new Set(['green', 'amber', 'red'])
-    const validPillars = new Set(['Environmental', 'Social', 'Governance', 'Cross-pillar'])
-    const cleaned = insights
-      .filter(
-        (i) =>
-          i &&
-          typeof i.title === 'string' &&
-          typeof i.message === 'string' &&
-          typeof i.action === 'string'
-      )
-      .slice(0, 5)
-      .map((i) => ({
-        pillar: validPillars.has(i.pillar) ? i.pillar : 'Cross-pillar',
-        type: i.type === 'warning' ? 'warning' : 'insight',
-        color: validColors.has(i.color) ? i.color : 'amber',
-        title: i.title.slice(0, 90),
-        message: i.message.slice(0, 260),
-        action: i.action.slice(0, 160),
-      }))
-
-    if (cleaned.length === 0) {
-      response.status(200).json({ available: false, reason: 'no-valid-insights' })
-      return
-    }
-
-    response.status(200).json({ available: true, insights: cleaned })
-  } catch (err) {
-    const reason = err?.name === 'AbortError' ? 'timeout' : 'fetch-failed'
-    response.status(200).json({ available: false, reason })
-  } finally {
-    clearTimeout(timer)
+  if (!result.ok) {
+    response.status(200).json({ available: false, reason: result.error, model: result.model })
+    return
   }
+
+  let insights
+  try {
+    insights = JSON.parse(result.text)
+  } catch {
+    response.status(200).json({ available: false, reason: 'unparseable-response' })
+    return
+  }
+
+  if (!Array.isArray(insights)) {
+    response.status(200).json({ available: false, reason: 'unexpected-shape' })
+    return
+  }
+
+  // Sanitize to the exact shape the UI renders; drop anything malformed.
+  const validColors = new Set(['green', 'amber', 'red'])
+  const validPillars = new Set(['Environmental', 'Social', 'Governance', 'Cross-pillar'])
+  const cleaned = insights
+    .filter(
+      (i) =>
+        i &&
+        typeof i.title === 'string' &&
+        typeof i.message === 'string' &&
+        typeof i.action === 'string'
+    )
+    .slice(0, 5)
+    .map((i) => ({
+      pillar: validPillars.has(i.pillar) ? i.pillar : 'Cross-pillar',
+      type: i.type === 'warning' ? 'warning' : 'insight',
+      color: validColors.has(i.color) ? i.color : 'amber',
+      title: i.title.slice(0, 90),
+      message: i.message.slice(0, 260),
+      action: i.action.slice(0, 160),
+    }))
+
+  if (cleaned.length === 0) {
+    response.status(200).json({ available: false, reason: 'no-valid-insights' })
+    return
+  }
+
+  response.status(200).json({ available: true, insights: cleaned })
 }
