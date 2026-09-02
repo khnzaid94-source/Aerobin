@@ -39,7 +39,11 @@ export default async function handler(request, response) {
 
   let payload
   try {
-    const body = JSON.parse(request.body || '{}')
+    // Vercel auto-parses application/json bodies into objects; fall back to
+    // manual parse for raw-string bodies (e.g. other content types locally).
+    const body = typeof request.body === 'object' && request.body !== null
+      ? request.body
+      : JSON.parse(request.body || '{}')
     payload = body?.context
   } catch {
     response.status(400).json({ available: false, reason: 'invalid-json' })

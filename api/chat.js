@@ -60,7 +60,11 @@ export default async function handler(request, response) {
 
   let messages, lang, context
   try {
-    const body = JSON.parse(request.body || '{}')
+    // Vercel auto-parses application/json bodies into objects; fall back to
+    // manual parse for raw-string bodies (e.g. other content types locally).
+    const body = typeof request.body === 'object' && request.body !== null
+      ? request.body
+      : JSON.parse(request.body || '{}')
     messages = Array.isArray(body?.messages) ? body.messages.slice(-10) : []
     lang = typeof body?.lang === 'string' ? body.lang : 'en'
     context = body?.context ?? {}
