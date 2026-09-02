@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { recordPm25Reading } from './anomaly'
 
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
 const AIR_POLLUTION_URL = 'https://api.openweathermap.org/data/2.5/air_pollution'
@@ -86,6 +87,9 @@ export function useWeather(wardList, fallbackPm25) {
           updatedAt: Date.now(),
           source: 'live',
         })
+        // Feed successful live readings into the anomaly-detection history
+        // (fallback values are constant and would poison the z-score).
+        recordPm25Reading(ward.id, result.value.pm25)
       } else {
         cache.set(ward.id, {
           pm25: fallbackPm25 ?? null,

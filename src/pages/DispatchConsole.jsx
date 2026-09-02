@@ -7,6 +7,7 @@ import { LoadingScreen, ErrorScreen } from '../components/StateScreen'
 import { riskMeta, RISK_BANDS, COLORS } from '../lib/theme'
 import { formatScore, formatPercent, formatPm25, timeAgo } from '../lib/format'
 import { loadAuditLog, persistAuditLog, makeDispatchEntry, sessionStats } from '../lib/auditLog'
+import { fetchDispatchLog, isConfigured as supabaseConfigured } from '../lib/supabase'
 import { LiveReading } from '../components/LiveReading'
 
 /**
@@ -71,7 +72,7 @@ function WardRow({ ward, reading, done, selected, onSelect, onAction, auditEntry
       <div className="min-w-0 flex-1">
         <p className="truncate font-display text-base text-navy">{ward.name}</p>
         <p className="text-xs text-slate">Score {formatScore(ward.current.burnRiskScore)} {sla && <span style={{color:sla.tone, fontWeight:600}}>· {sla.label}</span>}</p>
-        <LiveReading reading={reading} className="mt-1" />
+        <LiveReading reading={reading} wardId={ward.id} className="mt-1" />
       </div>
       {done ? (
         <span
@@ -167,7 +168,24 @@ export function DispatchConsole() {
 
   useEffect(() => {
     if (data.status === 'ready' && auditLog === null) {
-      setAuditLog(loadAuditLog(wardsWithBand))
+      const local = loadAuditLog(wardsWithBand)
+      setAuditLog(local)
+      // Best-effort merge of real (non-demo) dispatch entries from other
+      // devices within the last 24h. Local rows win on id collisions;
+      // remote rows are marked session:true so they render like genuine
+      // actions. Any failure quietly leaves the local seed untouched.
+      if (supabaseConfigured()) {
+        fetchDispatchLog().then((remote) => {
+          if (remote.length === 0) return
+          setAuditLog((current) => {
+            if (!current) return local
+            const seen = new Set(current.map((e) => e.id))
+            const fresh = remote.filter((e) => !seen.has(e.id))
+            if (fresh.length === 0) return current
+            return [...fresh, ...current].sort((a, b) => b.time - a.time)
+          })
+        })
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.status])
@@ -200,7 +218,7 @@ export function DispatchConsole() {
   )
 
   const handleAction = (ward, action) => {
-    const entry = makeDispatchEntry({ ward, action })
+    const entry = makeDispatchEntry({ ward, action }, { demo: demoMode })
     const next = [entry, ...auditLog]
     setAuditLog(next)
     persistAuditLog(next)
@@ -209,7 +227,7 @@ export function DispatchConsole() {
   const handleBulkDispatch = () => {
     const pending = dispatchToday.filter((w) => !actionedIds.has(w.id))
     if (pending.length === 0) return
-    const entries = pending.map((ward) => makeDispatchEntry({ ward, action: 'dispatch' }))
+    const entries = pending.map((ward) => makeDispatchEntry({ ward, action: 'dispatch' }, { demo: demoMode }))
     const next = [...entries, ...auditLog]
     setAuditLog(next)
     persistAuditLog(next)
@@ -249,6 +267,9 @@ export function DispatchConsole() {
               <p className="font-display text-xl text-navy">
                 {formatPercent(g2.current, 1)}{' '}
                 <span className="text-sm font-normal text-slate">of alerts actioned in 24 hrs</span>
+              </p>
+              <p className="text-[11px] font-medium" style={{ color: supabaseConfigured() ? COLORS.tealText : COLORS.muted }}>
+                {supabaseConfigured() ? '● Cross-device sync on' : '● Local session only'}
               </p>
             </div>
             <span
