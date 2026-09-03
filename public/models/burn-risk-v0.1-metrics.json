@@ -1,0 +1,166 @@
+{
+  "version": "0.1",
+  "model": "Gradient Boosting",
+  "task": "ward-day burn-risk probability ( Pune pilot wards)",
+  "trainedOn": "2022-07-15..2023-12-31 (train), 2024-01-01..2024-12-31 (test holdout)",
+  "labelDefinition": "attributed FIRMS VIIRS_SNPP_SP hotspots >= 1 within ward<=5km on day or next (48h framing)",
+  "labelThreshold": 1,
+  "features": [
+    "pm25_mean",
+    "pm25_mean_7d",
+    "pm25_slope_7d",
+    "humidity_mean",
+    "humidity_7d",
+    "humidity_trend_7d",
+    "temp_max",
+    "wind_max",
+    "precipitation_sum",
+    "days_since_rain",
+    "green_cover_pct",
+    "market_flag",
+    "income_ord",
+    "festival_window",
+    "doy_sin",
+    "doy_cos"
+  ],
+  "testMetrics": {
+    "auprc": 0.035070156806014705,
+    "baseRate": 0.018579234972677595,
+    "rocAuc": 0.6678402987030001,
+    "brier": 0.018214783154700036,
+    "operatingThreshold": 0.026274087986498013,
+    "operatingPrecision": 0.044444444444444446,
+    "operatingRecall": 0.058823529411764705,
+    "flaggedDays": 45,
+    "perWard": {
+      "bhosari": {
+        "n_days": 366,
+        "burn_days": 10,
+        "precision": 0.0,
+        "recall": 0.0,
+        "flagged": 15
+      },
+      "hadapsar": {
+        "n_days": 366,
+        "burn_days": 9,
+        "precision": 0.0,
+        "recall": 0.0,
+        "flagged": 6
+      },
+      "kharadi": {
+        "n_days": 366,
+        "burn_days": 7,
+        "precision": 0.18181818181818182,
+        "recall": 0.2857142857142857,
+        "flagged": 11
+      },
+      "mundhwa": {
+        "n_days": 366,
+        "burn_days": 4,
+        "precision": 0.0,
+        "recall": 0.0,
+        "flagged": 4
+      },
+      "wagholi": {
+        "n_days": 366,
+        "burn_days": 4,
+        "precision": 0.0,
+        "recall": 0.0,
+        "flagged": 9
+      }
+    },
+    "equityGapS3": 0.18181818181818182,
+    "incomeGroupPrecision": {
+      "low": 0.0,
+      "mixed": 0.0,
+      "high": 0.18181818181818182
+    }
+  },
+  "candidates": {
+    "logistic_regression": {
+      "model": "Logistic Regression",
+      "auprc": 0.031878102895059296,
+      "base_rate": 0.018579234972677595,
+      "roc_auc": 0.7221276038254946,
+      "brier": 0.018093330743163844,
+      "operating_points": {
+        "1%": {
+          "k": 18,
+          "threshold": 0.046524675079157425,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "2.5%": {
+          "k": 45,
+          "threshold": 0.04195411929175858,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "5%": {
+          "k": 91,
+          "threshold": 0.03713950904490808,
+          "precision": 0.02197802197802198,
+          "recall": 0.058823529411764705
+        }
+      },
+      "operating_threshold_pct": 0.04195411929175858,
+      "operating_precision": 0.0,
+      "operating_recall": 0.0,
+      "flagged_days": 45
+    },
+    "gradient_boosting": {
+      "model": "Gradient Boosting",
+      "auprc": 0.035070156806014705,
+      "base_rate": 0.018579234972677595,
+      "roc_auc": 0.6678402987030001,
+      "brier": 0.018214783154700036,
+      "operating_points": {
+        "1%": {
+          "k": 18,
+          "threshold": 0.02811032259927299,
+          "precision": 0.1111111111111111,
+          "recall": 0.058823529411764705
+        },
+        "2.5%": {
+          "k": 45,
+          "threshold": 0.026274087986498013,
+          "precision": 0.044444444444444446,
+          "recall": 0.058823529411764705
+        },
+        "5%": {
+          "k": 91,
+          "threshold": 0.024520569905381373,
+          "precision": 0.03296703296703297,
+          "recall": 0.08823529411764706
+        }
+      },
+      "operating_threshold_pct": 0.026274087986498013,
+      "operating_precision": 0.044444444444444446,
+      "operating_recall": 0.058823529411764705,
+      "flagged_days": 45
+    }
+  },
+  "limitations": [
+    "Pipeline demonstrator on real public data \u2014 not a production predictor",
+    "FIRMS 375m pixels miss many small waste fires; labels are a lower bound on true burning",
+    "Bhosari industrial hotspots are a known false-positive confound at threshold 1",
+    "CAMS gridded PM2.5 is reanalysis, not ground truth; Pune CPCB coverage is patchy",
+    "Ward attribution uses nearest-centroid (<=5km), not polygons \u2014 pilot wards share admin boundaries",
+    "Calibrated rare-event probabilities will rarely exceed 70% \u2014 by design"
+  ],
+  "dataSources": {
+    "weather": "Open-Meteo Archive API (temperature_2m_max, relative_humidity_2m_mean, precipitation_sum, wind_speed_10m_max)",
+    "pm25": "Open-Meteo Air Quality API (CAMS reanalysis pm2_5, daily mean of available hours)",
+    "hotspots": "NASA FIRMS VIIRS_SNPP_SP (Standard Processing archive), Pune bbox 73.70,18.40,74.10,18.68",
+    "wardFlags": "public/data/aerobin_data.json (greenCover, marketFlag, incomeLevel)"
+  },
+  "onnxCheck": {
+    "maxAbsDiffVsSklearn": 8.315830313493713e-05,
+    "opset": 17
+  },
+  "threshold2Sensitivity": {
+    "testBurnDays": 15,
+    "lrAuprc": 0.007881865960629331,
+    "baseRate": 0.00819672131147541
+  }
+}
