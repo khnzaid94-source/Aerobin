@@ -6,20 +6,21 @@
 
 *Internship portfolio project — 1M1B Green Skills and Applied AI for Climate Action.*
 
-A 12-week Pune pilot (Oct–Dec, 5 wards) for open waste burning early warning — built as three focused micro-apps on one shared dataset so they never disagree. Tagline: **Predictive Justice For Clean Air** (`src/pages/AppMenu.jsx:65`).
+A 12-week Pune pilot (Oct–Dec, 5 wards) for open waste burning early warning — built as three focused micro-apps on one shared dataset so they never disagree, plus a public model card for the real classifier behind the risk scores. Tagline: **Predictive Justice For Clean Air** (`src/pages/AppMenu.jsx:78`).
 
 | App | Route | For | Question it answers |
 |-----|-------|-----|---------------------|
 | **Citizen Alert** | `/citizen` | Residents | Is my ward burning today? Where do I dump waste for free? |
 | **PMC Dispatch** | `/dispatch` | Ward officers | Which wards need a truck? Did we log the decision? |
 | **Impact Analyst** | `/analyst` | Funders / PMC leadership | Did the pilot work? Are we ready to scale? |
+| **Model v0.1** | `/model` | Anyone | How good is the classifier, honestly — and where does it fail? |
 
 ![Citizen Alert — open waste burning map, demo 1/5 High](SS/citizen-map.png)
 ![PMC Dispatch — sorted queue, SLA countdown, audit log](SS/dispatch-queue.png)
 ![Impact Analyst — 12-week playback + replication readiness](SS/analyst-playback.png)
 ![Landing — three micro-apps on ink editorial](SS/landing.png)
 
-Landing at `/` links to all three; each app has a back-to-menu pill and a tab switcher (`src/components/TopNav.jsx:29`).
+Landing at `/` links to all three apps plus the model card; each app has a back-to-menu pill and a tab switcher (`src/components/TopNav.jsx:29`).
 
 > Screenshots are in `SS/` and render above on GitHub. Replace any PNG to update.
 
@@ -47,6 +48,7 @@ Open burning of mixed waste spikes PM2.5 with no warning and no accountability t
 *   **Mobile Citizen** — below 640px floating `Popup` → `BottomSheet.jsx:11-27` sheet with backdrop + dialog a11y (`src/pages/CitizenAlert.jsx:42-126`).
 *   **AI Insights** (`src/pages/ImpactAnalyst.jsx` + `api/insights.js`) — one tap generates 3–5 grounded diagnostic cards from the 9 ESG metrics via Gemini. Every output is tagged "AI-generated · verify against data"; no key configured ⇒ honest notice, not a fake.
 *   **Ask AeroBin assistant** (`src/components/CitizenChatbot.jsx` + `api/chat.js`) — grounded chat on `/citizen`: answers only from today's ward scores/bands/PM2.5, in EN/MR/HI following the language selector. Same honest-availability contract.
+*   **Model v0.1 — the real classifier** (`/model`, `src/pages/ModelCard.jsx`) — a Gradient Boosting burn-risk classifier trained on 2.5 years of real public data (NASA FIRMS satellite hotspots, Open-Meteo weather + CAMS PM2.5, 2022–24), exported to ONNX and running **fully client-side** via `onnxruntime-web`. The model card shows every metric verbatim from the training sidecar — AUPRC 0.035 (1.9× lift over a 1.9% base rate), and the **S3 equity gap it measured on itself: 0.18** (precision 18% in high-income Kharadi vs 0% in the low-income wards where burning is most common). A "try it" section computes today's live probability per ward in your browser — keyless (Open-Meteo), offline-friendly, and honest about being a pipeline demonstrator, not a production predictor. Quiet "Model v0.1 live" lines appear in Citizen ward details and Dispatch rows when the estimate is available.
 
 See `docs/CONTRAST_FIX.md` and `docs/DATA_MODEL.md` for the deep dives that used to live here.
 
@@ -59,6 +61,8 @@ React 19 + Vite 8 + `react-router-dom:7.18.1` (lazy chunks per app `src/App.jsx:
 **AI (v2.0):** Gemini Flash via Vercel serverless functions in `api/` (keys stay server-side) — AI Insights for the Analyst (`api/insights.js`) and a grounded multilingual citizen assistant (`api/chat.js`). Without `GEMINI_API_KEY` both features show an honest "not configured" notice and every v1.0 feature keeps working.
 
 **Real-time + persistence (v2.0):** NASA FIRMS satellite burn detection (`api/fires.js` — VIIRS hotspots attributed to nearest ward centroid ≤5 km, 30-min cache), client-side PM2.5 anomaly detection (`src/lib/anomaly.js` — rolling z-score ≥2.5σ vs the ward's own recent history; no claim until ≥6 readings), and Supabase persistence (`supabase/schema.sql` — append-only `dispatch_log` + `feedback` under RLS) so dispatch actions and citizen votes survive across devices. Demo-mode writes are flagged `demo: true` and excluded from analytics. Every feature degrades honestly when unconfigured.
+
+**Real ML, in the browser (v2.0 Phase 7):** `training/` holds the full pipeline as re-runnable notebooks — `01_build_dataset.ipynb` (901-day ward-day panel from Open-Meteo + FIRMS `VIIRS_SNPP_SP`, 48h-framed burn-day labels, 16 past-only features) and `02_train_model.ipynb` (LR vs GB, time-series split train '22–'23 / test '24, calibrated, ONNX export + metrics sidecar). `onnxruntime-web` runs the 307 KB model client-side; its 13.3 MB WASM runtime is copied to `dist/models/ort/` at build time (never committed) via an inline Vite plugin, and resolves as a lazy 358 KB chunk so only `/model` and ward-detail views pay for it.
 
 ---
 
@@ -94,6 +98,8 @@ Free Hobby tier, zero config — the repo already includes `vercel.json` (SPA re
 5. Environment Variables → `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` from your Supabase project (Settings → API) after running `supabase/schema.sql` in its SQL Editor — enables cross-device dispatch log + feedback corpus
 6. Deploy → every future `git push` to `main` auto-redeploys
 
+The burn-risk model needs **no env vars** — the ONNX file ships with the repo and `/model`'s live try-it uses keyless Open-Meteo APIs.
+
 Requires Node `>=18` (`package.json:6` `engines`, `.nvmrc:1` `20`). See `jsconfig.json` for `checkJs` IDE hints (Option A — no TS migration).
 
 ---
@@ -118,15 +124,19 @@ src/
   components/ TopNav.jsx, Card.jsx, LeafletMap.jsx, Sparkline.jsx, PilotPlayback.jsx,
               LiveReading.jsx, BottomSheet.jsx, CardAccentArt.jsx, StateScreen.jsx,
               ErrorBoundary.jsx, CitizenChatbot.jsx
-  lib/        useAerobinData.js, useWardGeoJSON.js, useWeather.js, useFires.js, useIsMobile.js,
+  lib/        useAerobinData.js, useWardGeoJSON.js, useWeather.js, useFires.js,
+              useBurnRisk.js (client-side ONNX), useIsMobile.js,
               DemoContext.js/DemoProvider.jsx/useDemoMode.js, demoOverrides.js,
               theme.js, esgStatus.js, auditLog.js, exportReport.js, format.js,
               i18n.jsx, aiClient.js, anomaly.js, supabase.js, registerSW.js
-  pages/      AppMenu.jsx, CitizenAlert.jsx, DispatchConsole.jsx, ImpactAnalyst.jsx
+  pages/      AppMenu.jsx, CitizenAlert.jsx, DispatchConsole.jsx, ImpactAnalyst.jsx, ModelCard.jsx
 api/          insights.js (AI Insights), chat.js (citizen assistant), fires.js (FIRMS satellite) — Vercel serverless
+training/     01_build_dataset.ipynb, 02_train_model.ipynb, burn_dataset.csv, ward_day_labels.csv
+              (re-runnable ML pipeline; cache/ holds raw fetches, gitignored)
+public/       leaf.svg, manifest.json, sw.js, data/ aerobin_data.json, pune-admin-wards.geojson,
+              models/ burn-risk-v0.1.onnx + metrics sidecar (served at /models/*)
 supabase/     schema.sql (tables + RLS policies — run once in Supabase SQL Editor)
-public/       leaf.svg, manifest.json, sw.js, data/ aerobin_data.json, pune-admin-wards.geojson
-Project Submissions/  1A–4B docs, Prototype Video.mkv (65 MB, direct push), Portfolio pptx
+Project Submissions/  1A–4B docs, Portfolio pptx
 docs/         CONTRAST_FIX.md, DATA_MODEL.md, ROADMAP.md
 SS/           citizen-map.png, dispatch-queue.png, analyst-playback.png, landing.png
 ```
@@ -136,18 +146,19 @@ SS/           citizen-map.png, dispatch-queue.png, analyst-playback.png, landing
 ## Process Docs
 
 `Project Submissions/` holds the 1A–4B process trail (Campus Audit → Indicator Mapping → Cleaned Dataset → Visualization → Smart Solution → AI Workflow → ESG Report → Scaling Strategy) plus `AeroBin-Project-Brief.md` (# Problem → Research → Solution → Impact → Next). Kept in the repo intentionally to show how the app was built, not just the final screens.
-
 ---
 
 ## Limitations & Next Steps
 
-From `docs/ROADMAP.md`: needs live burn-detection feed (FIRMS/satellite or PMC data share), real backend vs `localStorage` for cross-officer audit, and closing `S2_smsAdoption` gap (28.8% vs 50% target) before replication. See `docs/ROADMAP.md` for the prioritized backlog (C12 bulk dispatch, C13 audit search, D20 CSV export, F26-30 compare/history/i18n/PWA).
+The classifier's own honest numbers are on `/model`: modest ranking skill (AUPRC 0.035), a **0.18 equity gap** (precision collapses in the low-income wards where burning is most common — the Expansion-phase blocker, now measured rather than estimated), and threshold-2 labels with zero skill (too few strict burn days in train). A v0.2 with a longer training window (through 2025) and a hotspot-persistence feature is a file-drop retrain away — the integration stays untouched.
+
+From `docs/ROADMAP.md`: driver GPS for dispatch verification, heatmap layers, and closing the `S2_smsAdoption` gap (28.8% vs 50% target) before replication. Live feedback analytics (Phase 8) waits for real accumulated usage.
 
 ---
 
 ## Rights
 
-© 2026 Zaid Khan — All rights reserved. View-only. No reuse licence granted. Contact author for permission. Data is simulated (CPCB 2022-24 baselines, `meta.dataType` in `aerobin_data.json:5`).
+© 2026 Zaid Khan — All rights reserved. View-only. No reuse licence granted. Contact author for permission. The pilot app runs on simulated ward scores (CPCB 2022-24 baselines, `meta.dataType` in `aerobin_data.json:5`); the Phase 7 classifier and its `/model` card are built on real public data (NASA FIRMS, Open-Meteo/CAMS).
 
 ---
 
