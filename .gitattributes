@@ -3,4 +3,6 @@
 *.pptx binary
 *.xlsx binary
 *.docx binary
+*.onnx binary
 *.mkv -diff -merge
+*.onnx -diff -merge
