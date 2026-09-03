@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAerobinData } from '../lib/useAerobinData'
 import { useWeather } from '../lib/useWeather'
 import { useDemoMode } from '../lib/useDemoMode'
+import { useBurnRisk } from '../lib/useBurnRisk'
 import { LeafletMap } from '../components/LeafletMap'
 import { LoadingScreen, ErrorScreen } from '../components/StateScreen'
 import { riskMeta, RISK_BANDS, COLORS } from '../lib/theme'
@@ -19,7 +20,7 @@ import { LiveReading } from '../components/LiveReading'
  * everywhere else (meta.textColor, not meta.color) so a hovered Medium
  * ward is actually readable.
  */
-function WardTooltip({ ward, reading }) {
+function WardTooltip({ ward, reading, modelEstimate }) {
   const meta = riskMeta(ward.current.burnRiskScore)
   const feature = ward.current.topFeatures?.[0]
   return (
@@ -43,6 +44,11 @@ function WardTooltip({ ward, reading }) {
           PM2.5 {formatPm25(reading.pm25)}
         </p>
       )}
+      {modelEstimate && (
+        <p className="mt-0.5 text-[11px] font-semibold" style={{ color: COLORS.slateSoft }}>
+          Model v0.1 live: {(modelEstimate.probability * 100).toFixed(1)}% ({modelEstimate.asOf})
+        </p>
+      )}
     </div>
   )
 }
@@ -56,7 +62,7 @@ function slaCountdown(entryTime) {
   return { label: `${hrs}h ${mins}m left`, tone }
 }
 
-function WardRow({ ward, reading, done, selected, onSelect, onAction, auditEntry }) {
+function WardRow({ ward, reading, done, selected, onSelect, onAction, auditEntry, modelEstimate }) {
   const meta = riskMeta(ward.current.burnRiskScore)
   const sla = auditEntry ? slaCountdown(auditEntry.time) : null
   return (
@@ -73,6 +79,11 @@ function WardRow({ ward, reading, done, selected, onSelect, onAction, auditEntry
         <p className="truncate font-display text-base text-navy">{ward.name}</p>
         <p className="text-xs text-slate">Score {formatScore(ward.current.burnRiskScore)} {sla && <span style={{color:sla.tone, fontWeight:600}}>· {sla.label}</span>}</p>
         <LiveReading reading={reading} wardId={ward.id} className="mt-1" />
+        {modelEstimate && (
+          <p className="mt-0.5 text-[11px] font-semibold text-slate-soft">
+            Model v0.1 live: {(modelEstimate.probability * 100).toFixed(1)}% burn-day probability ({modelEstimate.asOf})
+          </p>
+        )}
       </div>
       {done ? (
         <span
@@ -175,6 +186,18 @@ export function DispatchConsole() {
     : null
   const weather = useWeather(wardsWithBand, fallbackPm25)
 
+  // Static flags for the live model estimate (same fields as training).
+  const staticFlags = useMemo(() => {
+    if (data.status !== 'ready') return null
+    return Object.fromEntries(
+      data.wardList.map((w) => [
+        w.id,
+        { greenCover: w.greenCover, marketFlag: w.marketFlag, incomeLevel: w.incomeLevel },
+      ])
+    )
+  }, [data.status, data.wardList])
+  const burnRisk = useBurnRisk(staticFlags)
+
   useEffect(() => {
     if (data.status === 'ready' && auditLog === null) {
       const local = loadAuditLog(wardsWithBand)
@@ -260,7 +283,7 @@ export function DispatchConsole() {
           wards={wardsWithBand}
           selectedWardId={selectedWardId}
           onSelectWard={setSelectedWardId}
-          renderTooltip={(ward) => <WardTooltip ward={ward} reading={weather.readings[ward.id]} />}
+          renderTooltip={(ward) => <WardTooltip ward={ward} reading={weather.readings[ward.id]} modelEstimate={burnRisk.status === 'ready' ? burnRisk.data[ward.id] : null} />}
           className="h-full w-full"
         />
       </div>
@@ -333,6 +356,7 @@ export function DispatchConsole() {
                   onSelect={setSelectedWardId}
                   onAction={handleAction}
                   auditEntry={entry}
+                  modelEstimate={burnRisk.status === 'ready' ? burnRisk.data[ward.id] : null}
                 />
               )})}
             </ul>

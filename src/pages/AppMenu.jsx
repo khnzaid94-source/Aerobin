@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Wind } from 'lucide-react'
+import { Wind, GitBranch } from 'lucide-react'
 import { useAerobinData } from '../lib/useAerobinData'
 import { LoadingScreen, ErrorScreen } from '../components/StateScreen'
-import { WaveArt, NodeGridArt, RingsArt } from '../components/CardAccentArt'
+import { WaveArt, NodeGridArt, RingsArt, CurveArt } from '../components/CardAccentArt'
 import { COLORS, APP_ACCENTS } from '../lib/theme'
 import { useDemoMode } from '../lib/useDemoMode'
 
@@ -50,6 +50,18 @@ const APPS = [
     Art: RingsArt,
   },
 ]
+
+// The model card is a page, not one of the three operational apps — it gets
+// its own quieter row so the 3-app story stays the headline.
+const MODEL_CARD = {
+  path: '/model',
+  eyebrow: 'Transparency',
+  title: 'Model v0.1',
+  description:
+    'The real burn-risk classifier behind the pilot: trained on satellite and weather data, with honest metrics — including the equity gap it found in itself.',
+  stat: 'Gradient Boosting · AUPRC 0.035 · ONNX in-browser',
+  Art: CurveArt,
+}
 
 function Logo() {
   return (
@@ -213,74 +225,118 @@ export function AppMenu() {
         {data.status === 'error' && <ErrorScreen detail={data.error} />}
 
         {data.status === 'ready' && (
-          <div className="grid gap-5 sm:grid-cols-3">
-            {APPS.map((app) => {
-              const accent = APP_ACCENTS[app.key]
-              const Art = app.Art
-              return (
-                <Link
-                  key={app.path}
-                  to={app.path}
-                  className="ab-app-card group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-navy-raised p-6"
-                  style={{ '--ab-accent': accent.accent }}
-                >
-                  <Art color={accent.accent} />
-
-                  <div className="relative">
-                    <span
-                      className="text-xs font-semibold uppercase tracking-widest"
-                      style={{ color: accent.accent }}
-                    >
-                      {app.eyebrow}
-                    </span>
-                    <h2
-                      className="mt-2 font-display"
-                      style={{
-                        color: TEXT_ON_DARK,
-                        fontWeight: 500,
-                        fontSize: 16,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      {app.title}
-                    </h2>
-                    <p
-                      className="mt-3 text-sm italic leading-relaxed"
-                      style={{ color: TEXT_ON_DARK_SECONDARY }}
-                    >
-                      {app.question}
-                    </p>
-                    <p className="mt-3 text-sm leading-relaxed" style={{ color: accent.tint }}>
-                      {app.description}
-                    </p>
-                  </div>
-
-                  <div
-                    className="relative mt-6 flex items-center justify-between border-t pt-4"
-                    style={{ borderColor: COLORS.navyLine }}
+          <>
+            <div className="grid gap-5 sm:grid-cols-3">
+              {APPS.map((app) => {
+                const accent = APP_ACCENTS[app.key]
+                const Art = app.Art
+                return (
+                  <Link
+                    key={app.path}
+                    to={app.path}
+                    className="ab-app-card group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-navy-raised p-6"
+                    style={{ '--ab-accent': accent.accent }}
                   >
-                    <div className="flex flex-col">
-                      <span className="text-xs font-medium" style={{ color: COLORS.muted }}>
-                        {app.stat(data)}
+                    <Art color={accent.accent} />
+
+                    <div className="relative">
+                      <span
+                        className="text-xs font-semibold uppercase tracking-widest"
+                        style={{ color: accent.accent }}
+                      >
+                        {app.eyebrow}
                       </span>
-                      {data.meta?.weekDates && (
-                        <span className="text-[11px]" style={{ color: COLORS.muted, opacity: 0.8 }}>
-                          Last updated: {data.summary.lastUpdated}
-                        </span>
-                      )}
+                      <h2
+                        className="mt-2 font-display"
+                        style={{
+                          color: TEXT_ON_DARK,
+                          fontWeight: 500,
+                          fontSize: 16,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                        }}
+                      >
+                        {app.title}
+                      </h2>
+                      <p
+                        className="mt-3 text-sm italic leading-relaxed"
+                        style={{ color: TEXT_ON_DARK_SECONDARY }}
+                      >
+                        {app.question}
+                      </p>
+                      <p className="mt-3 text-sm leading-relaxed" style={{ color: accent.tint }}>
+                        {app.description}
+                      </p>
                     </div>
-                    <span
-                      className="text-sm font-semibold transition group-hover:translate-x-0.5"
-                      style={{ color: accent.accent }}
+
+                    <div
+                      className="relative mt-6 flex items-center justify-between border-t pt-4"
+                      style={{ borderColor: COLORS.navyLine }}
                     >
-                      Open →
-                    </span>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-medium" style={{ color: COLORS.muted }}>
+                          {app.stat(data)}
+                        </span>
+                        {data.meta?.weekDates && (
+                          <span className="text-[11px]" style={{ color: COLORS.muted, opacity: 0.8 }}>
+                            Last updated: {data.summary.lastUpdated}
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className="text-sm font-semibold transition group-hover:translate-x-0.5"
+                        style={{ color: accent.accent }}
+                      >
+                        Open →
+                      </span>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+
+            <div className="mt-5 sm:max-w-md">
+              <Link
+                to={MODEL_CARD.path}
+                className="ab-app-card group relative flex items-center gap-4 overflow-hidden rounded-2xl border bg-navy-raised p-5"
+                style={{ '--ab-accent': APP_ACCENTS.model.accent }}
+              >
+                <MODEL_CARD.Art color={APP_ACCENTS.model.accent} />
+                <div className="relative min-w-0 flex-1">
+                  <span
+                    className="text-xs font-semibold uppercase tracking-widest"
+                    style={{ color: APP_ACCENTS.model.accent }}
+                  >
+                    {MODEL_CARD.eyebrow}
+                  </span>
+                  <h2
+                    className="mt-1 font-display"
+                    style={{
+                      color: TEXT_ON_DARK,
+                      fontWeight: 500,
+                      fontSize: 15,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    {MODEL_CARD.title}
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed" style={{ color: APP_ACCENTS.model.tint }}>
+                    {MODEL_CARD.description}
+                  </p>
+                  <p className="mt-2 text-xs font-medium" style={{ color: COLORS.muted }}>
+                    {MODEL_CARD.stat}
+                  </p>
+                </div>
+                <GitBranch
+                  size={20}
+                  aria-hidden
+                  className="relative shrink-0 transition group-hover:translate-x-0.5"
+                  style={{ color: APP_ACCENTS.model.accent }}
+                />
+              </Link>
+            </div>
+          </>
         )}
 
         <p className="mt-14 text-center text-xs" style={{ color: COLORS.muted }}>

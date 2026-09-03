@@ -4,6 +4,7 @@ import { useAerobinData } from '../lib/useAerobinData'
 import { useWeather } from '../lib/useWeather'
 import { useIsMobile } from '../lib/useIsMobile'
 import { useFires } from '../lib/useFires'
+import { useBurnRisk } from '../lib/useBurnRisk'
 import { useDemoMode } from '../lib/useDemoMode'
 import { LeafletMap } from '../components/LeafletMap'
 import { LiveReading } from '../components/LiveReading'
@@ -75,7 +76,7 @@ function confidenceFor(ward) {
   return Math.max(52, Math.min(94, base + sparse + (ward.current.burnRiskScore % 7)))
 }
 
-function WardDetails({ ward, reading, fires }) {
+function WardDetails({ ward, reading, fires, burnRisk }) {
   const meta = riskMeta(ward.current.burnRiskScore)
   const isHigh = meta.band === 'High'
   const [lat, lon] = ward.coordinates
@@ -86,6 +87,7 @@ function WardDetails({ ward, reading, fires }) {
 
   const fireCount = fires?.status === 'ready' ? fires.data.wards.find(w => w.id === ward.id)?.count ?? 0 : null
   const fireLevel = fireCount == null ? null : fireCount === 0 ? 'none' : fireCount <= 3 ? 'low' : 'high'
+  const modelEstimate = burnRisk?.status === 'ready' ? burnRisk.data[ward.id] : null
 
   return (
     <div className="font-body">
@@ -122,6 +124,14 @@ function WardDetails({ ward, reading, fires }) {
           {fireCount === 0
             ? '🛰 Satellite: no burning hotspots detected near this ward in the last 24h.'
             : `🛰 Satellite: ${fireCount} burning hotspot${fireCount > 1 ? 's' : ''} detected near ${ward.name} in the last 24h — avoid burning waste and use the free PMC dump slot.`}
+        </p>
+      )}
+
+      {modelEstimate && (
+        <p className="mt-2 rounded-lg border border-mist bg-white px-2.5 py-2 text-xs leading-snug text-slate">
+          <span className="font-semibold text-navy">Model v0.1 live:</span>{' '}
+          {(modelEstimate.probability * 100).toFixed(1)}% burn-day probability for {modelEstimate.asOf} —
+          an AI estimate from the real classifier (<Link to="/model" className="font-semibold underline" style={{ color: COLORS.tealText }}>what's this?</Link>)
         </p>
       )}
 
@@ -178,6 +188,19 @@ export function CitizenAlert() {
   const [selectedWardId, setSelectedWardId] = useState(() => searchParams.get('ward') ?? null)
   const [showCompare, setShowCompare] = useState(false)
   const isMobile = useIsMobile(640)
+
+  // Static flags for the live model (greenCover/marketFlag/incomeLevel — the
+  // same fields the training features used).
+  const staticFlags = useMemo(() => {
+    if (data.status !== 'ready') return null
+    return Object.fromEntries(
+      data.wardList.map((w) => [
+        w.id,
+        { greenCover: w.greenCover, marketFlag: w.marketFlag, incomeLevel: w.incomeLevel },
+      ])
+    )
+  }, [data.status, data.wardList])
+  const burnRisk = useBurnRisk(staticFlags)
   useEffect(() => {
     const next = new URLSearchParams(searchParams)
     if (selectedWardId) next.set('ward', selectedWardId)
@@ -233,7 +256,7 @@ export function CitizenAlert() {
           onSelectWard={setSelectedWardId}
           // On mobile the ward panel becomes the bottom sheet below instead
           // of a cramped floating popup, so no renderPopup is passed here.
-          renderPopup={isMobile ? undefined : (ward) => <WardDetails ward={ward} reading={weather.readings[ward.id]} fires={fires} />}
+          renderPopup={isMobile ? undefined : (ward) => <WardDetails ward={ward} reading={weather.readings[ward.id]} fires={fires} burnRisk={burnRisk} />}
           className="h-full w-full"
         />
 
@@ -295,7 +318,7 @@ export function CitizenAlert() {
       {isMobile && (
         <BottomSheet open={Boolean(selectedWard)} onClose={() => setSelectedWardId(null)}>
           {selectedWard && (
-            <WardDetails ward={selectedWard} reading={weather.readings[selectedWard.id]} fires={fires} />
+            <WardDetails ward={selectedWard} reading={weather.readings[selectedWard.id]} fires={fires} burnRisk={burnRisk} />
           )}
         </BottomSheet>
       )}

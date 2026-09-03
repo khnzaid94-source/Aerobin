@@ -34,6 +34,7 @@ export const APP_ACCENTS = {
   citizen: { accent: '#4FB89A', tint: '#9ADCC3' },
   dispatch: { accent: '#7AA7D6', tint: '#AAC8E6' },
   analyst: { accent: '#C98A1A', tint: '#E8B86A' },
+  model: { accent: '#B49BD8', tint: '#D3C4EC' },
 }
 
 export const RISK_BANDS = {

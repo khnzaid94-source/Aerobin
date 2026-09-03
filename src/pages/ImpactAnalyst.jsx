@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Download, Check, Sparkles, RefreshCw } from 'lucide-react'
 import { Card, StatusPill, StatusSpine } from '../components/Card'
 import { Sparkline } from '../components/Sparkline'
@@ -52,6 +53,14 @@ function MetricCard({ metric, activeIndex }) {
         <div className="mt-3">
           <Sparkline series={metric.series} status={status} activeIndex={activeIndex} id={metric.key} />
         </div>
+
+        {metric.key === 'S3_equityGap' && (
+          <p className="mt-2 text-xs">
+            <Link to="/model" className="font-semibold underline" style={{ color: '#00695A' }}>
+              The real classifier's measured equity gap → Model v0.1
+            </Link>
+          </p>
+        )}
       </div>
     </StatusSpine>
   )

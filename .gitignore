@@ -29,3 +29,6 @@ coverage
 
 .vercel
 .env*
+
+# Training pipeline: raw fetch caches are re-downloadable, never commit
+training/cache/

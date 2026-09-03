@@ -149,7 +149,7 @@
 |-------|---------|--------|
 | 5 | AI Insights (Analyst) + Citizen Chatbot — Gemini via serverless | ✅ Shipped (live, verified EN+MR) |
 | 6 | FIRMS satellite burn detection + PM2.5 anomaly detection + Supabase persistence | ✅ Shipped & fully verified (RLS battery green) |
-| 7 | Real burn-risk classifier (Open-Meteo + FIRMS labels → scikit-learn → ONNX in-browser) | 🚧 Next — recipe locked below |
+| 7 | Real burn-risk classifier (Open-Meteo + FIRMS labels → scikit-learn → ONNX in-browser) | ✅ Shipped (7a dataset → 7b train+export → 7c /model page + live try-it, all verified) |
 | 8 | Live feedback analytics | ⏸ Deferred (needs real accumulated usage; S3 measurement folded into Phase 7 `/model` page) |
 
 ### Phase 5/6 deployment fixes (found during live verification — the early push paid off)
@@ -207,7 +207,7 @@
 - **Supabase (free):** `@supabase/supabase-js`; `src/lib/supabase.js` (null-client degradation when unconfigured); `supabase/schema.sql` — append-only `feedback` + `dispatch_log` tables with RLS (anon INSERT-only on feedback, INSERT+SELECT on dispatch_log, no update/delete ever); `auditLog.makeDispatchEntry` write-through with `demo` flag (demo actions never pollute the real corpus); DispatchConsole merges remote non-demo rows from last 24h on mount (local wins on id); "Cross-device sync on / Local session only" indicator; `FeedbackButtons` votes post to `feedback` with ward + score + demo flag.
 - Deployment env vars: `FIRMS_MAP_KEY` (server), `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (client, RLS-protected).
 
-## Phase 7 — Real Burn-Risk Classifier 🚧 NEXT (recipe locked)
+## Phase 7 — Real Burn-Risk Classifier ✅ SHIPPED (dataset → trained model → live in-browser inference)
 
 **Decisions locked:** notebook-first (run in Colab, review metrics at checkpoint before integration) · ONNX served **in-browser** via `onnxruntime-web` (free, offline-friendly, PWA-aligned) · S3 equity measurement folded into the `/model` page · pilot's static scores stay untouched (model is a parallel "Model v0.1 live" view) · all training data from free public sources, zero new accounts.
 
@@ -216,16 +216,32 @@
 - **Open-Meteo Air Quality API** — daily PM2.5 (CAMS reanalysis, gridded → consistent coverage for all 5 wards, no sparse-station problem). Free, no key.
 - **NASA FIRMS SP collections** (`VIIRS_SNPP_SP`) — historical hotspots back to 2022 (the live NRT feed we use in `api/fires.js` only reaches ~2 months back; SP covers the full training window). Existing MAP key, ~220 chunked requests, well inside the 5000/10min limit.
 
-**7a. `training/01_build_dataset.ipynb`:**
-1. Fetch weather + PM2.5 for the 5 ward coordinates, Jan 2022 → Dec 2024 (~1,095 days × 5 wards)
-2. Fetch FIRMS SP for the Pune bbox, chunked ≤5 days per request, 1s sleep, hotspots attributed to wards via the **same ≤5km-centroid rule as `api/fires.js`** (training/live consistency)
-3. **Labels:** ward-day = burn day if hotspots ≥ threshold that day or the next (48h framing per the 3B doc); threshold (1 vs 2) is a reported hyperparameter — Bhosari industrial false-positives at threshold 1 are a documented confound for the model card
-4. **Features:** PM2.5 level + 7-day slope, humidity (mean + trend), dryness (days since rain), wind, green cover %, market/income flags (from `aerobin_data.json`), festival-window flags (Diwali etc.), day-of-year seasonality (sin/cos)
-5. Commit the processed CSV to `training/` (~5,500 rows) — deterministic reruns, full data lineage for the model card
+**7a. `training/01_build_dataset.ipynb`:** ✅ DONE (run locally, end-to-end, 2026-09-03)
+1. Fetch weather + PM2.5 for the 5 ward coordinates (`api/fires.js` centroid set — training/live consistency), 2022-07-15 → 2024-12-31 (901 days; start clipped to CAMS PM2.5 availability, verified live: 2022 H1 hours return `None`, 2023–24 complete)
+2. Fetch FIRMS `VIIRS_SNPP_SP` for the Pune bbox, 5-day chunks (Area API caps DAY_RANGE at 1–5), 181 requests, 1s sleep, cached to `training/cache/` (gitignored); attribution via the same ≤5km-nearest-centroid rule as `api/fires.js`
+3. **Labels:** ward-day = burn day if attributed hotspots ≥ threshold that day or the next (48h framing); `LABEL_THRESHOLD=1` primary (86 burn days / 4,365 ward-days, 2.0% base rate; per-ward: Bhosari 23, Wagholi 22, Hadapsar 19, Kharadi 18, Mundhwa 4); threshold 2 sensitivity run pending in 7b comparison
+4. **Features:** PM2.5 daily mean + 7d slope + 7d mean, humidity mean/trend/7d, temp max, wind max, precipitation, days-since-rain, green cover %, market/income flags, festival windows (Diwali/Holika + 7-day aftermath), doy sin/cos — all rolling features past-only (`shift(1)`, no leakage)
+5. Committed outputs: `training/burn_dataset.csv` (4,365 rows × 23 cols incl. `split_year` for the time split) + `training/ward_day_labels.csv` (58 attributed pixels, full lineage) — deterministic re-runs via cache
+6. Verified in the wild: FIRMS SP probe confirmed 0 pixels in monsoon windows is real (not a bug); VIIRS CSVs carry `bright_ti4` not `brightness` (parser handles both); pandas 3.0 API breaks fixed (`.dt` on DatetimeIndex, SeriesGroupBy.fillna)
 
-**7b. `training/02_train_model.ipynb`:** Logistic Regression + Gradient Boosting (the 3B design); **time-series split** (train '22–'23, test '24 — never random shuffle); class weights for imbalance; report **AUPRC + per-ward precision** (not just accuracy — rare events make accuracy lie); calibrated probabilities → real confidence scores; export winner to ONNX (~50KB) → `public/models/burn-risk-v0.1.onnx` + metrics JSON sidecar. **Checkpoint: review metrics together before integration.**
+**7b. `training/02_train_model.ipynb`:** ✅ RUN — metrics checkpoint reached (numbers below; integration gated on review per the locked recipe)
+- LR vs GB, time-split train '22–'23 (2,535 rows / 52 burn days) → test '24 (1,830 rows / 34 burn days), calibrated (sigmoid CV), no shuffling
+- **Class-weights decision (found live):** passing 50× sample weights into `CalibratedClassifierCV` broke GB's probabilities (Brier 0.135 vs 0.018) — both candidates now run unweighted inside calibration; honest calibrated probabilities beat inflated positive rates (documented in-notebook)
+- **Winner: Gradient Boosting** — AUPRC 0.035 (1.9× lift over 0.019 base), ROC-AUC 0.668, Brier 0.018; top-1% precision 0.11 (≈6× base) but top-2.5% precision 0.04; **threshold-2 labels: AUPRC 0.008 vs 0.008 base → zero skill** (only 9 strict burn days in train — too few to learn)
+- **S3 equity gap measured: 0.18** (high-income Kharadi precision 0.18 vs 0.00 in low/mixed groups at top-2.5%) — the model performs *worse where fires matter most*, now measurable and on `/model`
+- Exported: `public/models/burn-risk-v0.1.onnx` (307 KB, single flat `X` float32[1,16] input, zipmap off, max |onnx−sklearn| = 8.3e-05) + `burn-risk-v0.1-metrics.json` sidecar (features, sources, all metrics, per-ward precision, equity gap, limitations, threshold-2 sensitivity)
+- skl2onnx gotchas solved: DataFrame-fitted pipelines convert to per-column inputs → re-fit a name-free clone on plain ndarray for one flat input; zipmap disabled for onnxruntime-web
+- **Interpretation for the model card:** modest but real ranking skill (1.9× lift); operational precision is far from dispatch-grade; the point of v0.1 is the honest pipeline + honest numbers, not a production predictor
 
-**7c. Integration:** `onnxruntime-web` runs the model client-side; new `useBurnRisk` hook computes the same features from live data; Citizen/Dispatch get a parallel "Model v0.1 live" view with honest labeling (a calibrated rare-event model will rarely say ≥70% — showing that truthfully is the point); `/model` model-card route (features, data sources, metrics, **per-ward test-set precision = S3 equity gap made measurable**, limitations). **Model card honesty: this is a pipeline demonstrator on real data, not a production predictor — Pune CPCB coverage is patchy and FIRMS 375m pixels miss many small waste fires.**
+**7c. Integration:** ✅ SHIPPED (local, verified 2026-09-03)
+- **Runtime delivery:** `onnxruntime-web` 1.29, extern-wasm build via Vite `resolve.conditions: ['onnxruntime-web-use-extern-wasm']` (default `.bundle` import inlines ~28 MB of wasm — found during verification); inline `ortWasmAssets()` Vite plugin copies `ort-wasm-simd-threaded.wasm`+`.mjs` (13.3 MB) from node_modules → `dist/models/ort/` at build (repo stays lean, version locked by package-lock) and streams them in dev/preview via mount-prefix middleware (connect strips the prefix — `req.url` inside the handler is just `/<asset>`)
+- `ort.env.wasm.numThreads = 1` (no COOP/COEP site-wide — they'd break OSM tiles; sub-10ms inference for a 307 KB model doesn't need threads)
+- **`src/lib/useBurnRisk.js`** — honesty-contract hook (`loading|ready|unavailable`); ORT session singleton w/ failure reset; features from **live Open-Meteo** (forecast API `past_days=92` serves `relative_humidity_2m_mean` daily + is current through yesterday — no archive/forecast stitching needed; air-quality API `past_days=92` hourly PM2.5 → daily means); mirrors 7a math exactly (shift-1 past-only lags, `days_since_rain` over non-null precip, festival table extended 2025–26, doy sin/cos); demo mode deliberately does not alter it (parallel live estimate of the real world)
+- **`/model` page** (`src/pages/ModelCard.jsx`, lazy route) — sidecar rendered verbatim (never recomputed): S3 equity gap **0.18 as the red headline**, AUPRC/lift/precision@K/Brier, threshold-2 zero-skill note, per-ward precision table, features/sources/limitations, training-notebook link; **try-it** ward selector → live in-browser estimate
+- **Entry points:** AppMenu 4th "Model v0.1 · Transparency" card (quiet row below the 3-app grid — the 3-app story stays the headline); Analyst S3 metric card links to `/model`; Citizen WardDetails + Dispatch WardRow/tooltip show a quiet "Model v0.1 live: X% (asOf)" line only when the hook is ready
+- i18n: full model-card strings in EN/MR/HI (`model*` keys)
+- **Verified:** oxlint clean (only the pre-existing i18n fast-refresh warning); `vite build` — ORT as separate 358 KB lazy chunk, exactly one 13.3 MB wasm at `dist/models/ort/`, model 307 KB + sidecar 5 KB; live pipeline E2E (Node harness mirroring the hook): all 5 wards → **2.0–2.1% P(burn) for 2026-09-02** (monsoon, sane calibrated band); kill-switch (wasm blocked → honest unavailable, v1.0 flows untouched); all routes 200 in dev
+- Live-contract findings (verified against real APIs): forecast API serves `relative_humidity_2m_mean` + 92 days of history; archive API current through yesterday; `past_days` precipitation has nulls before data begins (counted as unknown, not dry)
 
 ## Phase 8 — Live Feedback Analytics ⏸ DEFERRED
 

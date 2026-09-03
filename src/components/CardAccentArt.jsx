@@ -52,3 +52,24 @@ export function RingsArt({ color }) {
     </svg>
   )
 }
+
+export function CurveArt({ color }) {
+  // Model card — a fitted curve over scattered points, standing in for
+  // learning from data (the classifier behind the pilot's scores).
+  const pts = [
+    [8, 78], [20, 66], [30, 70], [42, 54], [55, 46], [66, 40], [78, 26], [90, 30],
+  ]
+  return (
+    <svg viewBox="0 0 100 100" className="ab-card-accent" aria-hidden="true">
+      <path
+        d="M6 84 C 30 76, 44 60, 58 44 S 82 22, 96 14"
+        fill="none"
+        stroke={color}
+        strokeWidth="3"
+      />
+      {pts.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={3} fill={color} opacity={0.55} />
+      ))}
+    </svg>
+  )
+}

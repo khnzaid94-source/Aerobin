@@ -8,10 +8,13 @@ import { DemoProvider } from './lib/DemoProvider'
 import { I18nProvider } from './lib/i18n'
 
 // Each app is its own chunk — Leaflet (Citizen/Dispatch) and Recharts
-// (Analyst) only load once someone actually opens that app.
+// (Analyst) only load once someone actually opens that app. ModelCard is
+// separate too so the onnxruntime-web chunk only loads on /model and ward
+// detail views that ask for a live estimate.
 const CitizenAlert = lazy(() => import('./pages/CitizenAlert').then((m) => ({ default: m.CitizenAlert })))
 const DispatchConsole = lazy(() => import('./pages/DispatchConsole').then((m) => ({ default: m.DispatchConsole })))
 const ImpactAnalyst = lazy(() => import('./pages/ImpactAnalyst').then((m) => ({ default: m.ImpactAnalyst })))
+const ModelCard = lazy(() => import('./pages/ModelCard').then((m) => ({ default: m.ModelCard })))
 
 function AnimatedOutlet() {
   const location = useLocation()
@@ -63,6 +66,7 @@ function App() {
               <Route path="/citizen" element={<CitizenAlert />} />
               <Route path="/dispatch" element={<DispatchConsole />} />
               <Route path="/analyst" element={<ImpactAnalyst />} />
+              <Route path="/model" element={<ModelCard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
