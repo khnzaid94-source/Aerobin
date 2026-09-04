@@ -149,8 +149,10 @@
 |-------|---------|--------|
 | 5 | AI Insights (Analyst) + Citizen Chatbot — Gemini via serverless | ✅ Shipped (live, verified EN+MR) |
 | 6 | FIRMS satellite burn detection + PM2.5 anomaly detection + Supabase persistence | ✅ Shipped & fully verified (RLS battery green) |
-| 7 | Real burn-risk classifier (Open-Meteo + FIRMS labels → scikit-learn → ONNX in-browser) | ✅ Shipped (7a dataset → 7b train+export → 7c /model page + live try-it, all verified) |
+| 7 | Real burn-risk classifier (Open-Meteo + FIRMS labels → scikit-learn → ONNX in-browser) | ✅ Shipped & closed (7a/7b/7c + post-ship fix series + README/screenshots) |
 | 8 | Live feedback analytics | ⏸ Deferred (needs real accumulated usage; S3 measurement folded into Phase 7 `/model` page) |
+
+**v2.0 status: CLOSED.** All locked roadmap items shipped, live-verified, and documented. Optional future work (none blocking): Phase 8 once real usage accumulates; model v0.2 (training window through 2025 + yesterday's-hotspot-count persistence feature) as a retrain-and-file-drop; screenshot re-captures anytime (filenames stable).
 
 ### Phase 5/6 deployment fixes (found during live verification — the early push paid off)
 - `fix(api): accept Vercel-parsed JSON bodies` — Vercel auto-parses `application/json`, so handlers accept object-or-string bodies
@@ -170,6 +172,18 @@
 ### Standing roadmap order (locked 2026-09)
 1. Phase 7a dataset → 7b train + metrics checkpoint (notebook-first, run in Colab) → 7c integrate (ONNX in-browser, `/model` page)
 2. Final README rewrite + fresh screenshots at closing (user captures; filenames in `SS/` stay the same)
+
+**✅ Closing pass DONE (2026-09):** README rewritten for v2.0 (4-app table, model-card embed `SS/model-card.png`, AI + ML tech-stack sections, keyless-model deployment note, structure with `training/` + `public/models/`, honest-numbers limitations); fresh screenshots captured live by the user and shipped (`8561688`).
+
+---
+
+### Phase 7 post-ship fix series (found during user's live testing — the early push paid off again)
+- `fix(model): wasm-only ORT entry` (`642ead5`) — the **full** `onnxruntime-web` browser loader hardcodes a fetch for `ort-wasm-simd-threaded.jsep.mjs` (WebGPU/JSEP flavor we don't ship) → prod try-it failed with `no available backend found`. Fix: import `onnxruntime-web/wasm` (its loader fetches the plain `.mjs` from `wasmPaths` — the exact file the Vite plugin copies). ORT chunk 358 KB → **48 KB**. Lesson recorded: the Node-path test harness exercised the Node build, not the browser loader — verification upgraded to **real-Chromium Playwright** (`scripts/browser_check` pattern), which now guards the exact failure mode.
+- `fix(citizen): popups stopped jumping + map regains full height` (`1b0a821`) — ward popups grew in stages after open (satellite/model/PM2.5 lines each arrived seconds later, resizing a popup Leaflet had already auto-panned for) and clipped "Last 4 weeks" + feedback at the bottom edge. Fixes: **fixed-height StableSlots** in WardDetails (skeleton → content → quiet "unavailable", popup height constant for its lifetime), Popup `maxHeight` 480 + FAB-safe `autoPanPaddingBottomRight` (Leaflet's own `.leaflet-popup-scrolled` as backstop, styled subtly), and the Today banner moved from a block below the map into a **compact toolbar pill on desktop** (map regains ~90px original height; mobile keeps the in-flow banner since popups are bottom sheets there). Verified in real Chromium: 510px→510px Δ=0 across Bhosari/Wagholi/Hadapsar, "Last 4 weeks" visible, mobile 375px pass — regression scripts committed (`scripts/check-citizen-popup.mjs`, `check-citizen-mobile.mjs`).
+- `fix(citizen): toolbar pill contrast` (in `8561688`) — the "· Live PM2.5 / Offline mode" qualifier used `muted` (#8A9AA8): fine on the old navy banner (~6.5:1) but ~2.6:1 on the new light tint → failed WCAG AA. Fixed to `slate` + semibold: **measured 6.01:1** from the live DOM by `scripts/check-pill-contrast.mjs` (composites the rgba tint over white, asserts ≥ 4.5:1).
+- `chore(git): *.onnx binary` (`35657ff`) — `text=auto` LF-normalized the model file on commit; caught by sha256-comparing prod vs local (identical by luck — no CRLF bytes). Attribute added so it's never luck again.
+
+**Verification tooling that now lives in the repo:** `scripts/check-citizen-popup.mjs` (popup height stability + Last-4-weeks visibility, 3 wards), `scripts/check-citizen-mobile.mjs` (375px banner/sheet/overflow), `scripts/check-pill-contrast.mjs` (live-DOM WCAG ratio). All Playwright/Chromium, run against dev or preview server via `BASE` env.
 
 ---
 
