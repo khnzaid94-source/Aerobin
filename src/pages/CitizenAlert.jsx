@@ -76,6 +76,35 @@ function confidenceFor(ward) {
   return Math.max(52, Math.min(94, base + sparse + (ward.current.burnRiskScore % 7)))
 }
 
+/**
+ * Fixed-height slot for popup lines that arrive asynchronously (satellite,
+ * model, PM2.5). The slot ALWAYS occupies the same height — skeleton shimmer
+ * while loading, real content when ready, quiet "unavailable" placeholder
+ * when off — so the popup never changes size after Leaflet has auto-panned
+ * for it. That's what used to hide "Last 4 weeks" and the feedback row.
+ */
+function StableSlot({ loading, available, minHeight = 46, children }) {
+  if (loading) {
+    return (
+      <div className="mt-2 rounded-lg bg-mist px-2.5 py-2" style={{ minHeight }} aria-hidden>
+        <div className="ab-shimmer h-3 w-2/3 rounded" />
+        <div className="ab-shimmer mt-2 h-2.5 w-1/2 rounded" />
+      </div>
+    )
+  }
+  if (!available) {
+    return (
+      <p
+        className="mt-2 rounded-lg border border-mist px-2.5 py-2 text-xs leading-snug"
+        style={{ minHeight, color: COLORS.muted }}
+      >
+        {children}
+      </p>
+    )
+  }
+  return children // ready — caller renders its real block at the same height
+}
+
 function WardDetails({ ward, reading, fires, burnRisk }) {
   const meta = riskMeta(ward.current.burnRiskScore)
   const isHigh = meta.band === 'High'
@@ -85,12 +114,14 @@ function WardDetails({ ward, reading, fires, burnRisk }) {
   // Distance to Pune centre ~18.53,73.86 as rough city ref for display; real dump is at ward centroid
   const distKm = haversineKm([18.53,73.86], ward.coordinates).toFixed(1)
 
+  const firesLoading = fires?.status === 'loading'
   const fireCount = fires?.status === 'ready' ? fires.data.wards.find(w => w.id === ward.id)?.count ?? 0 : null
   const fireLevel = fireCount == null ? null : fireCount === 0 ? 'none' : fireCount <= 3 ? 'low' : 'high'
+  const modelLoading = burnRisk?.status === 'loading'
   const modelEstimate = burnRisk?.status === 'ready' ? burnRisk.data[ward.id] : null
 
   return (
-    <div className="font-body">
+    <div key={ward.id} className="font-body">
       <span
         className="rounded-full px-2 py-0.5 text-xs font-bold"
         style={{ background: meta.dim, color: meta.textColor }}
@@ -113,27 +144,45 @@ function WardDetails({ ward, reading, fires, burnRisk }) {
           : `No burning alert here right now — regular PMC waste collection stays open as usual.`}
       </p>
 
-      {fireCount != null && (
-        <p
-          className="mt-2 rounded-lg px-2.5 py-2 text-sm leading-snug"
-          style={{
-            background: fireLevel === 'high' ? COLORS.redDim : fireLevel === 'low' ? COLORS.amberDim : COLORS.tealDim,
-            color: fireLevel === 'high' ? COLORS.redText : fireLevel === 'low' ? COLORS.amberText : COLORS.tealText,
-          }}
-        >
-          {fireCount === 0
-            ? '🛰 Satellite: no burning hotspots detected near this ward in the last 24h.'
-            : `🛰 Satellite: ${fireCount} burning hotspot${fireCount > 1 ? 's' : ''} detected near ${ward.name} in the last 24h — avoid burning waste and use the free PMC dump slot.`}
-        </p>
-      )}
+      {/* Satellite hotspots — stable slot: never resizes the popup */}
+      <StableSlot
+        loading={firesLoading}
+        available={fireCount != null}
+        minHeight={46}
+      >
+        {fireCount != null ? (
+          <p
+            className="mt-2 rounded-lg px-2.5 py-2 text-sm leading-snug"
+            style={{
+              background: fireLevel === 'high' ? COLORS.redDim : fireLevel === 'low' ? COLORS.amberDim : COLORS.tealDim,
+              color: fireLevel === 'high' ? COLORS.redText : fireLevel === 'low' ? COLORS.amberText : COLORS.tealText,
+            }}
+          >
+            {fireCount === 0
+              ? '🛰 Satellite: no burning hotspots detected near this ward in the last 24h.'
+              : `🛰 Satellite: ${fireCount} burning hotspot${fireCount > 1 ? 's' : ''} detected near ${ward.name} in the last 24h — avoid burning waste and use the free PMC dump slot.`}
+          </p>
+        ) : (
+          '🛰 Satellite hotspots unavailable right now'
+        )}
+      </StableSlot>
 
-      {modelEstimate && (
-        <p className="mt-2 rounded-lg border border-mist bg-white px-2.5 py-2 text-xs leading-snug text-slate">
-          <span className="font-semibold text-navy">Model v0.1 live:</span>{' '}
-          {(modelEstimate.probability * 100).toFixed(1)}% burn-day probability for {modelEstimate.asOf} —
-          an AI estimate from the real classifier (<Link to="/model" className="font-semibold underline" style={{ color: COLORS.tealText }}>what's this?</Link>)
-        </p>
-      )}
+      {/* Model v0.1 live estimate — stable slot */}
+      <StableSlot
+        loading={modelLoading}
+        available={Boolean(modelEstimate)}
+        minHeight={46}
+      >
+        {modelEstimate ? (
+          <p className="mt-2 rounded-lg border border-mist bg-white px-2.5 py-2 text-xs leading-snug text-slate">
+            <span className="font-semibold text-navy">Model v0.1 live:</span>{' '}
+            {(modelEstimate.probability * 100).toFixed(1)}% burn-day probability for {modelEstimate.asOf} —
+            an AI estimate from the real classifier (<Link to="/model" className="font-semibold underline" style={{ color: COLORS.tealText }}>what's this?</Link>)
+          </p>
+        ) : (
+          'Model v0.1 live estimate unavailable (runtime or weather API unreachable)'
+        )}
+      </StableSlot>
 
       <a
         href={`https://maps.google.com/?q=${lat},${lon}`}
@@ -144,7 +193,11 @@ function WardDetails({ ward, reading, fires, burnRisk }) {
         Get directions ↗
       </a>
 
-      <LiveReading reading={reading} wardId={ward.id} className="mt-3" />
+      {/* Live PM2.5 — rendered inside a fixed min-height wrapper so the
+          "Checking…" → value transition doesn't resize the popup either */}
+      <div className="mt-3" style={{ minHeight: 36 }}>
+        <LiveReading reading={reading} wardId={ward.id} />
+      </div>
       <MiniTrend ward={ward} />
       <FeedbackButtons ward={ward} />
     </div>
@@ -232,8 +285,52 @@ export function CitizenAlert() {
 
   return (
     <div className="flex h-[calc(100dvh-52px)] flex-col">
-      <div className="flex items-center justify-between gap-2 bg-white px-3 py-2">
+      {/* Toolbar row: view label + the Today status as a compact pill
+          (desktop) + actions. Keeping the status HERE instead of a block
+          below the map gives the map back its full height — the banner used
+          to cost ~90px and squeezed popups off the bottom. Mobile keeps the
+          in-flow banner below the map (popups are bottom sheets there). */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-slate-soft">Citizen View</span>
+        {!isMobile && (
+          <div
+            className="flex min-w-0 items-center gap-2 rounded-full px-3 py-1.5"
+            style={{ background: allClear ? COLORS.tealDim : COLORS.redDim }}
+            data-testid="today-pill"
+          >
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: allClear ? COLORS.teal : COLORS.red }}
+              aria-hidden
+            />
+            <span
+              className="truncate text-xs font-semibold"
+              style={{ color: allClear ? COLORS.tealText : COLORS.redText }}
+            >
+              {allClear ? 'All wards below alert level' : `High-risk wards: ${highRiskWards.length} of ${wardsWithBand.length}`}
+            </span>
+            <span className="shrink-0 text-[11px] font-medium" style={{ color: COLORS.muted }}>
+              · {weather.isFetching ? 'Refreshing…' : weather.offline ? 'Offline mode' : 'Live PM2.5'}
+            </span>
+            {allClear && (
+              <Link
+                to="/analyst"
+                className="shrink-0 text-[11px] font-semibold underline"
+                style={{ color: COLORS.tealText }}
+                title="See the last High week in the Impact Analyst"
+              >
+                Week 6 →
+              </Link>
+            )}
+            <button
+              onClick={weather.refresh}
+              disabled={weather.isFetching}
+              className="shrink-0 rounded-full bg-teal px-2.5 py-1 text-[11px] font-semibold text-navy transition hover:brightness-95 disabled:opacity-50"
+            >
+              {weather.isFetching ? '…' : 'Refresh'}
+            </button>
+          </div>
+        )}
         <div className="flex gap-2">
           {selectedWardId && (
             <button
@@ -274,46 +371,49 @@ export function CitizenAlert() {
         />
       </div>
 
-      {/* Today banner — in page flow BELOW the map (not an overlay), so it
-          can never cover ward markers or clip Leaflet popups near the bottom. */}
-      <div className="bg-white px-3 pb-3 pt-2">
-        <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-navy px-4 py-3 shadow-lg">
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide" style={{ color: COLORS.muted }}>
-              Today
-            </p>
-            <p className="font-display text-base leading-tight sm:text-lg" style={{ color: '#FFFFFF' }}>
-              {allClear ? (
-                <span style={{ color: COLORS.teal }}>All wards below alert level</span>
-              ) : (
-                <>
-                  High-risk wards: <span style={{ color: COLORS.red }}>{highRiskWards.length}</span> of{' '}
-                  {wardsWithBand.length}
-                </>
+      {/* Mobile Today banner — in page flow BELOW the map (desktop status
+          lives in the toolbar pill above). Popups are bottom sheets on
+          mobile, so this can't clip anything. */}
+      {isMobile && (
+        <div className="bg-white px-3 pb-3 pt-2">
+          <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-navy px-4 py-3 shadow-lg">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-wide" style={{ color: COLORS.muted }}>
+                Today
+              </p>
+              <p className="font-display text-base leading-tight sm:text-lg" style={{ color: '#FFFFFF' }}>
+                {allClear ? (
+                  <span style={{ color: COLORS.teal }}>All wards below alert level</span>
+                ) : (
+                  <>
+                    High-risk wards: <span style={{ color: COLORS.red }}>{highRiskWards.length}</span> of{' '}
+                    {wardsWithBand.length}
+                  </>
+                )}
+              </p>
+              {allClear && (
+                <Link to="/analyst" className="mt-1 inline-block text-[11px] font-semibold underline" style={{ color: COLORS.teal }}>
+                  See last High week (Week 6) in Analyst →
+                </Link>
               )}
-            </p>
-            {allClear && (
-              <Link to="/analyst" className="mt-1 inline-block text-[11px] font-semibold underline" style={{ color: COLORS.teal }}>
-                See last High week (Week 6) in Analyst →
-              </Link>
-            )}
-            <p className="text-[11px]" style={{ color: COLORS.muted }}>
-              {weather.isFetching
-                ? 'Refreshing…'
-                : weather.offline
-                  ? 'Offline mode · showing pilot baseline'
-                  : 'Live PM2.5 connected'}
-            </p>
+              <p className="text-[11px]" style={{ color: COLORS.muted }}>
+                {weather.isFetching
+                  ? 'Refreshing…'
+                  : weather.offline
+                    ? 'Offline mode · showing pilot baseline'
+                    : 'Live PM2.5 connected'}
+              </p>
+            </div>
+            <button
+              onClick={weather.refresh}
+              disabled={weather.isFetching}
+              className="shrink-0 rounded-full bg-teal px-4 py-2 text-sm font-semibold text-navy transition hover:brightness-95 disabled:opacity-50"
+            >
+              {weather.isFetching ? '…' : 'Refresh'}
+            </button>
           </div>
-          <button
-            onClick={weather.refresh}
-            disabled={weather.isFetching}
-            className="shrink-0 rounded-full bg-teal px-4 py-2 text-sm font-semibold text-navy transition hover:brightness-95 disabled:opacity-50"
-          >
-            {weather.isFetching ? '…' : 'Refresh'}
-          </button>
         </div>
-      </div>
+      )}
 
       {isMobile && (
         <BottomSheet open={Boolean(selectedWard)} onClose={() => setSelectedWardId(null)}>

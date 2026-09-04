@@ -110,7 +110,24 @@ export function LeafletMap({
             icon={wardIcon(ward.band, ward.id === selectedWardId)}
             eventHandlers={{ click: () => onSelectWard?.(ward.id) }}
           >
-            {renderPopup && <Popup minWidth={260} maxWidth={320}>{renderPopup(ward)}</Popup>}
+            {renderPopup && (
+              <Popup
+                minWidth={260}
+                maxWidth={320}
+                /* Tall content scrolls inside the popup (Leaflet's built-in
+                   .leaflet-popup-scrolled container) instead of overflowing
+                   the map. 480 keeps the full ward popup (~430px with every
+                   live line) on screen unscrolled now that the map has its
+                   full height back — scroll is the emergency brake only. */
+                maxHeight={480}
+                /* Keep auto-pan from tucking a popup under the Ask AeroBin
+                   chat FAB (bottom-right, ~68px wide). */
+                autoPanPaddingBottomRight={[76, 16]}
+                autoPanPaddingTopLeft={[12, 12]}
+              >
+                {renderPopup(ward)}
+              </Popup>
+            )}
             {renderTooltip && (
               <Tooltip direction="top" offset={[0, -14]} opacity={1}>
                 {renderTooltip(ward)}

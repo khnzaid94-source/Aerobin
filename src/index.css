@@ -131,6 +131,23 @@ body,
 .leaflet-popup-tip {
   box-shadow: none;
 }
+/* Ward popups can exceed the map's height once every live line is in —
+   Leaflet then wraps content in a .leaflet-popup-scrolled div with its
+   own overflow scroll. Give it a subtle visible track so users can tell
+   there's more below. */
+.leaflet-popup-scrolled {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-right: 6px;
+}
+.leaflet-popup-scrolled::-webkit-scrollbar {
+  width: 5px;
+}
+.leaflet-popup-scrolled::-webkit-scrollbar-thumb {
+  background: #c9c4bd;
+  border-radius: 3px;
+}
 
 /* Reduced motion: kill the pulse animation used on high-risk markers */
 @media (prefers-reduced-motion: reduce) {
