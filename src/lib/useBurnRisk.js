@@ -64,9 +64,13 @@ let cache = { at: 0, data: null } // { wardId -> { probability, asOf, status } }
 const CACHE_MS = 10 * 60 * 1000 // live estimate refresh cadence — 10 min
 
 async function getOrt() {
-  // Lazy import: the ~360KB onnxruntime-web chunk only loads when a component
-  // actually asks for a burn-risk estimate. ort is configured once.
-  const ort = await import('onnxruntime-web')
+  // Lazy import of the WASM-ONLY entry ('onnxruntime-web/wasm', not the
+  // default full build): the full build's browser loader hardcodes the JSEP
+  // (WebGPU) wasm flavor 'ort-wasm-simd-threaded.jsep.mjs', which we do not
+  // ship — on prod it failed with "no available backend found". The wasm
+  // entry loads 'ort-wasm-simd-threaded.mjs' from wasmPaths — the exact file
+  // vite.config.js copies to /models/ort/.
+  const ort = await import('onnxruntime-web/wasm')
   ort.env.wasm.wasmPaths = `${import.meta.env.BASE_URL}models/ort/`
   // No COOP/COEP headers site-wide (they'd break cross-origin OSM tiles), so
   // the threaded WASM can't get a SharedArrayBuffer — single-threaded is fine
