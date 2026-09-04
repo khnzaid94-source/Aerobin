@@ -309,7 +309,7 @@ export function CitizenAlert() {
             >
               {allClear ? 'All wards below alert level' : `High-risk wards: ${highRiskWards.length} of ${wardsWithBand.length}`}
             </span>
-            <span className="shrink-0 text-[11px] font-medium" style={{ color: COLORS.muted }}>
+            <span className="shrink-0 text-[11px] font-semibold" style={{ color: COLORS.slate }}>
               · {weather.isFetching ? 'Refreshing…' : weather.offline ? 'Offline mode' : 'Live PM2.5'}
             </span>
             {allClear && (

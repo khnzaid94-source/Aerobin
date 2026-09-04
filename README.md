@@ -18,6 +18,7 @@ A 12-week Pune pilot (Oct–Dec, 5 wards) for open waste burning early warning �
 ![Citizen Alert — open waste burning map, demo 1/5 High](SS/citizen-map.png)
 ![PMC Dispatch — sorted queue, SLA countdown, audit log](SS/dispatch-queue.png)
 ![Impact Analyst — 12-week playback + replication readiness](SS/analyst-playback.png)
+![Model v0.1 — the measured equity gap, honest model card](SS/model-card.png)
 ![Landing — three micro-apps on ink editorial](SS/landing.png)
 
 Landing at `/` links to all three apps plus the model card; each app has a back-to-menu pill and a tab switcher (`src/components/TopNav.jsx:29`).
@@ -138,7 +139,7 @@ public/       leaf.svg, manifest.json, sw.js, data/ aerobin_data.json, pune-admi
 supabase/     schema.sql (tables + RLS policies — run once in Supabase SQL Editor)
 Project Submissions/  1A–4B docs, Portfolio pptx
 docs/         CONTRAST_FIX.md, DATA_MODEL.md, ROADMAP.md
-SS/           citizen-map.png, dispatch-queue.png, analyst-playback.png, landing.png
+SS/           citizen-map.png, dispatch-queue.png, analyst-playback.png, model-card.png, landing.png
 ```
 
 ---
