@@ -152,7 +152,7 @@
 | 7 | Real burn-risk classifier (Open-Meteo + FIRMS labels → scikit-learn → ONNX in-browser) | ✅ Shipped & closed (7a/7b/7c + post-ship fix series + README/screenshots) |
 | 8 | Live feedback analytics | ⏸ Deferred (needs real accumulated usage; S3 measurement folded into Phase 7 `/model` page) |
 
-**v2.0 status: CLOSED.** All locked roadmap items shipped, live-verified, and documented. Optional future work (none blocking): Phase 8 once real usage accumulates; model v0.2 (training window through 2025 + yesterday's-hotspot-count persistence feature) as a retrain-and-file-drop; screenshot re-captures anytime (filenames stable).
+**v2.0 status: CLOSED.** All locked roadmap items shipped, live-verified, and documented. Optional future work (none blocking): Phase 8 once real usage accumulates; model v0.2 (training window through 2025 + yesterday's-hotspot-count persistence feature) as a retrain-and-file-drop; screenshot re-captures anytime (filenames stable). **→ Next: see "v2.1 — Future Scope" at the bottom of this document.**
 
 ### Phase 5/6 deployment fixes (found during live verification — the early push paid off)
 - `fix(api): accept Vercel-parsed JSON bodies` — Vercel auto-parses `application/json`, so handlers accept object-or-string bodies
@@ -262,3 +262,37 @@
 - Supabase feedback + dispatch outcomes → live "was the model right" labels and per-ward precision.
 - Deferred: with test rows wiped, there is no real corpus yet. Needs accumulated real usage first.
 - The S3 "Model Accuracy Equity Gap" measurement (from Phase 7's held-out test split) lives on `/model` instead — historically measured now, live-measured later.
+
+---
+
+# v2.1 — Future Scope: Detect → Explain → Respond → Learn (locked 2026-09, not scheduled)
+
+**Why this reframe:** the closing question — "the model honestly says it's not good enough; can we do better?" — triggered a deep dive. Finding: v0.1's weak prediction metrics are not an effort gap, they're physics. (1) FIRMS 375 m pixels (~14 ha) structurally miss small waste fires — labels are a lower bound dominated by larger fires + the Bhosari industrial confound; (2) CAMS PM2.5 is ~10 km gridded while pilot wards sit 3–5 km apart — weather/PM features can't separate wards, so the model mostly learned "Pune in dry winter"; (3) the true burn driver (waste collection failure, festival cleanup nights, enforcement presence) is invisible to every free satellite feed. **Conclusion: day-ahead prophecy was the wrong job for this data; detection + response + community ground truth is the correct architecture.** The app already is two-thirds of that loop (satellite hotspots + PM2.5 anomaly detection live; dispatch/audit live) — the workstreams below complete it. The model card's "negative result" becomes the *engineering rationale*: tested rigorously, measured, and answered with the right architecture.
+
+### Workstream A — Reframe the model card (~0.5 day) ⏸ PENDING
+- `/model` leads with "what it's for": prioritization — the top 1% of ranked days carry ~6× the baseline burn rate; the job is ranking days for attention, not day-ahead prophecy
+- PR-curve visualization (Recharts, already in the stack) from new sidecar arrays (small cell appended to `training/02_train_model.ipynb`; cached data, no refetch; page still renders sidecar numbers verbatim, never recomputes)
+- "Why detection-first" section — the three label-physics findings above, shown with the measured numbers; S3 equity gap stays as the justice framing
+- README model section rewritten to lead with the detection→response loop
+
+### Workstream B — Risk Explorer on /model (~1 day) ⏸ PENDING
+- Interactive scenario panel: drag days-since-rain, pick season, toggle festival window, set PM2.5 trend → the actual ONNX model computes the scenario **live in-browser** and shows the risk multiplier vs the neutral reference ("2.8× baseline on a dry post-Diwali November day")
+- Honest labeling: scenario exploration (partial-dependence style), NOT prediction; ward static flags fixed to a selected ward so static features stay real
+- Browser checks assert sanity: dry-festival scenario >1×, monsoon reference ≈1×
+
+### Workstream C — Citizen report flywheel, with photo reports (~1–1.5 days) ⏸ PENDING
+**Decisions locked:** inline base64 photos (client-side canvas compression to ~640 px JPEG, ~40–80 KB, stored as a text column — no storage bucket, no new policies); reports surface as per-ward counts + latest note, not map markers; staged build A→B→C.
+- `reports` table: append-only like `dispatch_log` (anon INSERT+SELECT under RLS, idempotent migration): `ward_id, ward_name, note ≤200 chars optional, photo base64 optional, demo flag, created_at` — no new serverless endpoint, same client-side pattern as the dispatch log
+- Citizen `WardDetails`: "Report burning" button → note + photo form → insert (demo-flagged like everything else); unconfigured → honest "needs cloud sync" notice; confirmation: "Thanks — N others reported near this ward today"
+- Dispatch: "Citizen reports (24h)" chip on queue rows + tooltip count (only when configured)
+- i18n EN/MR/HI for all new strings; photo size guard; world-writable trust model documented (same posture as `feedback`)
+- **Why it matters:** people are the only sensor that reliably sees small waste fires — this is the ground-truth corpus satellites can't provide. The flywheel: the app collects the data that fixes the app.
+
+### Workstream D — Model v0.2 multi-satellite retrain ⏸ DEFERRED (gated)
+- Pre-flight findings (2026-09-05, read-only probes): S-NPP SP archive is flaky-to-patchy for 2025 (mostly HTTP 500s with real successes interleaved — API load vs archive thinning unresolved; `2026-02-10` returned 4 pixels, several 2025 dates 0/500); NOAA-20 SP answered once for 2025-01-10 (2 pixels) but 500s elsewhere; NOAA-21 SP covers from 2024-01. Live NRT (the app's own `api/fires.js` feed) unaffected by any of this. FIRMS bulk/Archive Download (Earthdata login) remains an untested alternative path for full-history shapefile/CSV exports if the Area API stays flaky.
+- Plan if picked up: combine S-NPP + NOAA-20 + NOAA-21 SP archives (3 satellites of the same 375 m VIIRS class → more burn-day labels, partially relieving label scarcity), extend window through 2025, add `hotspots_prev_day` + `hotspots_prev_3d` persistence features, mandatory persistence-vs-meteorology ablation reported on the model card
+- **Hard gate (unchanged):** swap only if AUPRC ≥ ~0.045 (≥30% relative over v0.1), S3 equity gap ≤ 0.18, Brier ≤ 0.03 — otherwise keep v0.1 and document why
+- Deprioritized under the new framing: the reframe makes v0.1's honest numbers a feature; the retrain is a quiet upgrade, not the headline
+
+### Also documented (not scheduled)
+- Phase 8 live feedback analytics — still needs real accumulated usage; Workstream C's `reports` table becomes a second feed for it alongside `feedback` + `dispatch_log`
